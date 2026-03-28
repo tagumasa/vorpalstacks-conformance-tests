@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>VorpalStacks.SDK.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AWSSDK.S3" Version="4.0.19.3" />
+    <PackageReference Include="AWSSDK.Lambda" Version="4.0.13.6" />
+    <PackageReference Include="AWSSDK.DynamoDBv2" Version="4.0.17.2" />
+    <PackageReference Include="AWSSDK.SQS" Version="4.0.2.19" />
+    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="4.0.2.21" />
+    <PackageReference Include="AWSSDK.IdentityManagement" Version="4.0.9.12" />
+    <PackageReference Include="AWSSDK.KeyManagementService" Version="4.0.9.5" />
+    <PackageReference Include="AWSSDK.CognitoIdentityProvider" Version="4.0.6.4" />
+    <PackageReference Include="AWSSDK.EventBridge" Version="4.0.5.20" />
+    <PackageReference Include="AWSSDK.StepFunctions" Version="4.0.2.14" />
+    <PackageReference Include="AWSSDK.Kinesis" Version="4.0.8.5" />
+    <PackageReference Include="AWSSDK.Athena" Version="4.0.4.5" />
+    <PackageReference Include="AWSSDK.SecretsManager" Version="4.0.4.11" />
+    <PackageReference Include="AWSSDK.CloudWatchLogs" Version="4.0.16" />
+    <PackageReference Include="AWSSDK.APIGateway" Version="4.0.6.2" />
+    <PackageReference Include="AWSSDK.CertificateManager" Version="4.0.2.19" />
+    <PackageReference Include="AWSSDK.CloudWatch" Version="4.0.8.4" />
+    <PackageReference Include="AWSSDK.Route53" Version="4.0.8.14" />
+    <PackageReference Include="AWSSDK.SecurityToken" Version="4.0.5.14" />
+    <PackageReference Include="AWSSDK.CloudFront" Version="4.0.12.5" />
+    <PackageReference Include="AWSSDK.CloudTrail" Version="4.0.5.14" />
+    <PackageReference Include="AWSSDK.SimpleEmail" Version="4.0.2.18" />
+    <PackageReference Include="AWSSDK.SimpleEmailV2" Version="4.0.2.6" />
+    <PackageReference Include="AWSSDK.SimpleSystemsManagement" Version="4.0.7.5" />
+    <PackageReference Include="AWSSDK.Scheduler" Version="4.0.2.18" />
+    <PackageReference Include="AWSSDK.WAF" Version="4.0.2.18" />
+    <PackageReference Include="AWSSDK.TimestreamQuery" Version="4.0.3.20" />
+    <PackageReference Include="AWSSDK.TimestreamWrite" Version="4.0.3.20" />
+    <PackageReference Include="AWSSDK.WAFV2" Version="4.*" />
+  </ItemGroup>
+
+</Project>
