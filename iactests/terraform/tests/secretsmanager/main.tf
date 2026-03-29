@@ -78,5 +78,6 @@ data "aws_secretsmanager_secret" "with_value" {
 }
 
 data "aws_secretsmanager_secret_version" "with_value" {
-  secret_id = aws_secretsmanager_secret.with_value.id
+  secret_id   = aws_secretsmanager_secret.with_value.id
+  depends_on  = [aws_secretsmanager_secret_version.with_value]
 }

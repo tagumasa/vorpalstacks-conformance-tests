@@ -65,6 +65,4 @@ resource "aws_cloudtrail" "basic" {
   enable_logging             = true
 }
 
-data "aws_cloudtrail" "basic" {
-  name = aws_cloudtrail.basic.name
-}
+

@@ -79,10 +79,4 @@ resource "aws_cloudwatch_event_target" "sqs_target" {
   arn       = aws_sqs_queue.target_queue.arn
 }
 
-data "aws_cloudwatch_event_rule" "pattern_rule" {
-  name = aws_cloudwatch_event_rule.pattern_rule.name
-}
 
-data "aws_cloudwatch_event_rule" "schedule_rule" {
-  name = aws_cloudwatch_event_rule.schedule_rule.name
-}

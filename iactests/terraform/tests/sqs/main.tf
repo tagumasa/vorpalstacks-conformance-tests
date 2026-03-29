@@ -58,7 +58,7 @@ resource "aws_sqs_queue" "standard" {
 
   timeouts {
     create = "2m"
-    delete = "2m"
+    delete = "5m"
   }
 }
 
@@ -69,7 +69,7 @@ resource "aws_sqs_queue" "fifo" {
 
   timeouts {
     create = "2m"
-    delete = "2m"
+    delete = "5m"
   }
 }
 
@@ -90,7 +90,7 @@ resource "aws_sqs_queue" "with_policy" {
 
   timeouts {
     create = "2m"
-    delete = "2m"
+    delete = "5m"
   }
 }
 
@@ -99,7 +99,7 @@ resource "aws_sqs_queue" "dlq" {
 
   timeouts {
     create = "2m"
-    delete = "2m"
+    delete = "5m"
   }
 }
 
@@ -113,7 +113,7 @@ resource "aws_sqs_queue" "main_with_dlq" {
 
   timeouts {
     create = "2m"
-    delete = "2m"
+    delete = "5m"
   }
 }
 

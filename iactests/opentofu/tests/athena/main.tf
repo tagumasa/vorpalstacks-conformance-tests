@@ -66,6 +66,4 @@ resource "aws_athena_workgroup" "basic" {
   }
 }
 
-data "aws_athena_workgroup" "basic" {
-  name = aws_athena_workgroup.basic.name
-}
+

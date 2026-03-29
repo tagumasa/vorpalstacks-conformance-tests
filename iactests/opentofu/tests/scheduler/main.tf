@@ -92,10 +92,4 @@ resource "aws_scheduler_schedule" "basic" {
   }
 }
 
-data "aws_scheduler_schedule" "basic" {
-  name = aws_scheduler_schedule.basic.name
-}
 
-data "aws_scheduler_schedule_group" "basic" {
-  name = aws_scheduler_schedule_group.basic.name
-}

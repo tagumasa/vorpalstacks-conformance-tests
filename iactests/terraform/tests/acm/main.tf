@@ -48,6 +48,7 @@ resource "aws_acm_certificate" "test" {
 }
 
 data "aws_acm_certificate" "test" {
-  domain   = "example.com"
-  statuses = ["ISSUED"]
+  domain     = "example.com"
+  statuses   = ["ISSUED"]
+  depends_on = [aws_acm_certificate.test]
 }
