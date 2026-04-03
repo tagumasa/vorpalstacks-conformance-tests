@@ -26,6 +26,7 @@ using Amazon.SimpleEmailV2;
 using Amazon.SimpleSystemsManagement;
 using Amazon.Scheduler;
 using Amazon.WAF;
+using Amazon.WAFV2;
 using Amazon.TimestreamWrite;
 using Amazon.Runtime;
 
@@ -208,6 +209,12 @@ public class TestRunner
     };
 
     public AmazonWAFConfig CreateWAFConfig() => new()
+    {
+        ServiceURL = _endpoint,
+        UseHttp = true
+    };
+
+    public AmazonWAFV2Config CreateWAFv2Config() => new()
     {
         ServiceURL = _endpoint,
         UseHttp = true

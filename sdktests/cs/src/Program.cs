@@ -232,7 +232,7 @@ if (service == "all" || service == "scheduler")
 // WAF
 if (service == "all" || service == "waf")
 {
-    var wafClient = new Amazon.WAF.AmazonWAFClient(credentials, runner.CreateWAFConfig());
+    var wafClient = new Amazon.WAFV2.AmazonWAFV2Client(credentials, runner.CreateWAFv2Config());
     results.AddRange(await WAFServiceTests.RunTests(runner, wafClient, region));
 }
 

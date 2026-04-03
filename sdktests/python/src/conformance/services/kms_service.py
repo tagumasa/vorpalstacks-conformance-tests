@@ -192,6 +192,7 @@ async def run_kms_tests(
             nonlocal mac_key_id
             mac_resp = kms_client.create_key(
                 KeyUsage="GENERATE_VERIFY_MAC",
+                KeySpec="HMAC_256",
                 Description="MAC key for SDK tests",
             )
             mac_key_id = mac_resp["KeyMetadata"]["KeyId"]
@@ -294,7 +295,6 @@ async def run_kms_tests(
             list_resp = kms_client.list_aliases()
             found = any(a["AliasName"] == key_alias for a in list_resp["Aliases"])
             assert found, f"alias {key_alias} not found after update"
-            key_alias = new_alias
 
         results.append(await runner.run_test("kms", "UpdateAlias", _update_alias))
 

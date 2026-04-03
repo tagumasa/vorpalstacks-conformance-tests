@@ -241,7 +241,7 @@ export async function runKMSTests(
     results.push(
       await runner.runTest('kms', 'GenerateMac', async () => {
         const macKeyResp = await kmsClient.send(
-          new CreateKeyCommand({ KeyUsage: 'GENERATE_VERIFY_MAC', Description: 'MAC key for SDK tests' })
+          new CreateKeyCommand({ KeyUsage: 'GENERATE_VERIFY_MAC', KeySpec: 'HMAC_256', Description: 'MAC key for SDK tests' })
         );
         const macKeyId = macKeyResp.KeyMetadata!.KeyId!;
         const resp = await kmsClient.send(
@@ -254,7 +254,7 @@ export async function runKMSTests(
     results.push(
       await runner.runTest('kms', 'VerifyMac', async () => {
         const macKeyResp = await kmsClient.send(
-          new CreateKeyCommand({ KeyUsage: 'GENERATE_VERIFY_MAC', Description: 'MAC key for SDK tests' })
+          new CreateKeyCommand({ KeyUsage: 'GENERATE_VERIFY_MAC', KeySpec: 'HMAC_256', Description: 'MAC key for SDK tests' })
         );
         const macKeyId = macKeyResp.KeyMetadata!.KeyId!;
         const macResp = await kmsClient.send(
