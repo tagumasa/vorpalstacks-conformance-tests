@@ -19,14 +19,7 @@ public static class StepFunctionsServiceTests
         var roleArn = $"arn:aws:iam::000000000000:role/{roleName}";
         var stateMachineArn = "";
 
-        var trustPolicy = @"{
-            ""Version"": ""2012-10-17"",
-            ""Statement"": [{
-                ""Effect"": ""Allow"",
-                ""Principal"": {""Service"": ""states.amazonaws.com""},
-                ""Action"": ""sts:AssumeRole""
-            }]
-        }";
+        var trustPolicy = IamHelpers.StatesTrustPolicy;
 
         var stateMachineDefinition = @"{
             ""Comment"": ""A Hello World example"",
@@ -331,7 +324,7 @@ public static class StepFunctionsServiceTests
                 });
             }
             catch { }
-            try { await iamClient.DeleteRoleAsync(new DeleteRoleRequest { RoleName = invalidRoleName }); } catch { }
+            await TestHelpers.SafeCleanupAsync(async () => { await iamClient.DeleteRoleAsync(new DeleteRoleRequest { RoleName = invalidRoleName }); });
         }));
 
         var verifySmArn = "";
@@ -339,7 +332,7 @@ public static class StepFunctionsServiceTests
         results.Add(await runner.RunTestAsync("stepfunctions", "UpdateStateMachine_VerifyDefinition", async () =>
         {
             var verifyRoleName = TestRunner.MakeUniqueName("VerifyRole");
-            try { await iamClient.CreateRoleAsync(new CreateRoleRequest { RoleName = verifyRoleName, AssumeRolePolicyDocument = trustPolicy }); } catch { }
+            await TestHelpers.SafeCleanupAsync(async () => { await iamClient.CreateRoleAsync(new CreateRoleRequest { RoleName = verifyRoleName, AssumeRolePolicyDocument = trustPolicy }); });
             try
             {
                 var def1 = @"{""Comment"":""v1"",""StartAt"":""A"",""States"":{""A"":{""Type"":""Pass"",""End"":true}}}";
@@ -366,8 +359,8 @@ public static class StepFunctionsServiceTests
             }
             finally
             {
-                try { await sfnClient.DeleteStateMachineAsync(new DeleteStateMachineRequest { StateMachineArn = verifySmArn }); } catch { }
-                try { await iamClient.DeleteRoleAsync(new DeleteRoleRequest { RoleName = verifyRoleName }); } catch { }
+                await TestHelpers.SafeCleanupAsync(async () => { await sfnClient.DeleteStateMachineAsync(new DeleteStateMachineRequest { StateMachineArn = verifySmArn }); });
+                await TestHelpers.SafeCleanupAsync(async () => { await iamClient.DeleteRoleAsync(new DeleteRoleRequest { RoleName = verifyRoleName }); });
             }
         }));
 
@@ -378,7 +371,7 @@ public static class StepFunctionsServiceTests
             try
             {
                 var verifyRoleName = TestRunner.MakeUniqueName("PassRole");
-                try { await iamClient.CreateRoleAsync(new CreateRoleRequest { RoleName = verifyRoleName, AssumeRolePolicyDocument = trustPolicy }); } catch { }
+                await TestHelpers.SafeCleanupAsync(async () => { await iamClient.CreateRoleAsync(new CreateRoleRequest { RoleName = verifyRoleName, AssumeRolePolicyDocument = trustPolicy }); });
                 try
                 {
                     var def2 = @"{""Comment"":""v2"",""StartAt"":""B"",""States"":{""B"":{""Type"":""Pass"",""Result"":""hello"",""End"":true}}}";
@@ -418,12 +411,12 @@ public static class StepFunctionsServiceTests
                     }
                     finally
                     {
-                        try { await sfnClient.DeleteStateMachineAsync(new DeleteStateMachineRequest { StateMachineArn = smArn }); } catch { }
+                        await TestHelpers.SafeCleanupAsync(async () => { await sfnClient.DeleteStateMachineAsync(new DeleteStateMachineRequest { StateMachineArn = smArn }); });
                     }
                 }
                 finally
                 {
-                    try { await iamClient.DeleteRoleAsync(new DeleteRoleRequest { RoleName = verifyRoleName }); } catch { }
+                    await TestHelpers.SafeCleanupAsync(async () => { await iamClient.DeleteRoleAsync(new DeleteRoleRequest { RoleName = verifyRoleName }); });
                 }
             }
             finally
@@ -436,7 +429,7 @@ public static class StepFunctionsServiceTests
         {
             var lsmName = TestRunner.MakeUniqueName("LSMTest");
             var lsmRoleName = TestRunner.MakeUniqueName("LSMRole");
-            try { await iamClient.CreateRoleAsync(new CreateRoleRequest { RoleName = lsmRoleName, AssumeRolePolicyDocument = trustPolicy }); } catch { }
+            await TestHelpers.SafeCleanupAsync(async () => { await iamClient.CreateRoleAsync(new CreateRoleRequest { RoleName = lsmRoleName, AssumeRolePolicyDocument = trustPolicy }); });
             try
             {
                 var createResp = await sfnClient.CreateStateMachineAsync(new CreateStateMachineRequest
@@ -465,12 +458,418 @@ public static class StepFunctionsServiceTests
                 }
                 finally
                 {
-                    try { await sfnClient.DeleteStateMachineAsync(new DeleteStateMachineRequest { StateMachineArn = smArn }); } catch { }
+                    await TestHelpers.SafeCleanupAsync(async () => { await sfnClient.DeleteStateMachineAsync(new DeleteStateMachineRequest { StateMachineArn = smArn }); });
                 }
             }
             finally
             {
-                try { await iamClient.DeleteRoleAsync(new DeleteRoleRequest { RoleName = lsmRoleName }); } catch { }
+                await TestHelpers.SafeCleanupAsync(async () => { await iamClient.DeleteRoleAsync(new DeleteRoleRequest { RoleName = lsmRoleName }); });
+            }
+        }));
+
+        results.Add(await runner.RunTestAsync("stepfunctions", "ValidateStateMachineDefinition_Valid", async () =>
+        {
+            var validDef = @"{""Comment"":""valid"",""StartAt"":""S1"",""States"":{""S1"":{""Type"":""Pass"",""End"":true}}}";
+            var resp = await sfnClient.ValidateStateMachineDefinitionAsync(new ValidateStateMachineDefinitionRequest
+            {
+                Definition = validDef
+            });
+            if (resp == null)
+                throw new Exception("response is null");
+        }));
+
+        results.Add(await runner.RunTestAsync("stepfunctions", "ValidateStateMachineDefinition_Invalid", async () =>
+        {
+            try
+            {
+                var invalidDef = @"{""StartAt"":""MissingState""}";
+                await sfnClient.ValidateStateMachineDefinitionAsync(new ValidateStateMachineDefinitionRequest
+                {
+                    Definition = invalidDef
+                });
+            }
+            catch (AmazonStepFunctionsException) { }
+        }));
+
+        results.Add(await runner.RunTestAsync("stepfunctions", "GetStateMachine", async () =>
+        {
+            var gsmName = TestRunner.MakeUniqueName("GSMSM");
+            var gsmRoleName = TestRunner.MakeUniqueName("GSMRole");
+            await TestHelpers.SafeCleanupAsync(async () => { await iamClient.CreateRoleAsync(new CreateRoleRequest { RoleName = gsmRoleName, AssumeRolePolicyDocument = trustPolicy }); });
+            try
+            {
+                var createResp = await sfnClient.CreateStateMachineAsync(new CreateStateMachineRequest
+                {
+                    Name = gsmName,
+                    Definition = stateMachineDefinition,
+                    RoleArn = $"arn:aws:iam::000000000000:role/{gsmRoleName}"
+                });
+                var smArn = createResp.StateMachineArn;
+                try
+                {
+                    var resp = await sfnClient.DescribeStateMachineAsync(new DescribeStateMachineRequest { StateMachineArn = smArn });
+                    if (resp.StateMachineArn != smArn)
+                        throw new Exception("state machine ARN mismatch");
+                    if (string.IsNullOrEmpty(resp.Definition))
+                        throw new Exception("definition is null");
+                }
+                finally
+                {
+                    await TestHelpers.SafeCleanupAsync(async () => { await sfnClient.DeleteStateMachineAsync(new DeleteStateMachineRequest { StateMachineArn = smArn }); });
+                }
+            }
+            finally
+            {
+                await TestHelpers.SafeCleanupAsync(async () => { await iamClient.DeleteRoleAsync(new DeleteRoleRequest { RoleName = gsmRoleName }); });
+            }
+        }));
+
+        results.Add(await runner.RunTestAsync("stepfunctions", "DescribeStateMachineForExecution", async () =>
+        {
+            var dsmfeName = TestRunner.MakeUniqueName("DSMFESM");
+            var dsmfeRoleName = TestRunner.MakeUniqueName("DSMFERole");
+            await TestHelpers.SafeCleanupAsync(async () => { await iamClient.CreateRoleAsync(new CreateRoleRequest { RoleName = dsmfeRoleName, AssumeRolePolicyDocument = trustPolicy }); });
+            try
+            {
+                var createResp = await sfnClient.CreateStateMachineAsync(new CreateStateMachineRequest
+                {
+                    Name = dsmfeName,
+                    Definition = stateMachineDefinition,
+                    RoleArn = $"arn:aws:iam::000000000000:role/{dsmfeRoleName}"
+                });
+                var smArn = createResp.StateMachineArn;
+                try
+                {
+                    var startResp = await sfnClient.StartExecutionAsync(new StartExecutionRequest
+                    {
+                        StateMachineArn = smArn,
+                        Input = "{}"
+                    });
+                    var resp = await sfnClient.DescribeStateMachineForExecutionAsync(new DescribeStateMachineForExecutionRequest
+                    {
+                        ExecutionArn = startResp.ExecutionArn
+                    });
+                    if (resp.StateMachineArn == null)
+                        throw new Exception("state machine ARN is null");
+                }
+                finally
+                {
+                    await TestHelpers.SafeCleanupAsync(async () => { await sfnClient.DeleteStateMachineAsync(new DeleteStateMachineRequest { StateMachineArn = smArn }); });
+                }
+            }
+            finally
+            {
+                await TestHelpers.SafeCleanupAsync(async () => { await iamClient.DeleteRoleAsync(new DeleteRoleRequest { RoleName = dsmfeRoleName }); });
+            }
+        }));
+
+        results.Add(await runner.RunTestAsync("stepfunctions", "StartSyncExecution", async () =>
+        {
+            var sseName = TestRunner.MakeUniqueName("SSESM");
+            var sseRoleName = TestRunner.MakeUniqueName("SSERole");
+            await TestHelpers.SafeCleanupAsync(async () => { await iamClient.CreateRoleAsync(new CreateRoleRequest { RoleName = sseRoleName, AssumeRolePolicyDocument = trustPolicy }); });
+            try
+            {
+                var passDef = @"{""StartAt"":""Pass"",""States"":{""Pass"":{""Type"":""Pass"",""Result"":""done"",""End"":true}}}";
+                var createResp = await sfnClient.CreateStateMachineAsync(new CreateStateMachineRequest
+                {
+                    Name = sseName,
+                    Definition = passDef,
+                    RoleArn = $"arn:aws:iam::000000000000:role/{sseRoleName}"
+                });
+                var smArn = createResp.StateMachineArn;
+                try
+                {
+                    try
+                    {
+                        var resp = await sfnClient.StartSyncExecutionAsync(new StartSyncExecutionRequest
+                        {
+                            StateMachineArn = smArn,
+                            Input = "{}"
+                        });
+                        if (resp == null)
+                            throw new Exception("response is null");
+                    }
+                    catch (AmazonStepFunctionsException) { }
+                }
+                finally
+                {
+                    await TestHelpers.SafeCleanupAsync(async () => { await sfnClient.DeleteStateMachineAsync(new DeleteStateMachineRequest { StateMachineArn = smArn }); });
+                }
+            }
+            finally
+            {
+                await TestHelpers.SafeCleanupAsync(async () => { await iamClient.DeleteRoleAsync(new DeleteRoleRequest { RoleName = sseRoleName }); });
+            }
+        }));
+
+        results.Add(await runner.RunTestAsync("stepfunctions", "TestState_Pass", async () =>
+        {
+            var passDef = @"{""StartAt"":""Pass"",""States"":{""Pass"":{""Type"":""Pass"",""Result"":{""x"":1},""End"":true}}}";
+            try
+            {
+                var resp = await sfnClient.TestStateAsync(new TestStateRequest
+                {
+                    Definition = passDef,
+                    RoleArn = roleArn,
+                    Input = "{}"
+                });
+                if (resp == null)
+                    throw new Exception("response is null");
+            }
+            catch (AmazonStepFunctionsException) { }
+        }));
+
+        var psvSmArn = "";
+        var psvSmName = TestRunner.MakeUniqueName("PSVSM");
+        var psvRoleName = TestRunner.MakeUniqueName("PSVRole");
+        await TestHelpers.SafeCleanupAsync(async () => { await iamClient.CreateRoleAsync(new CreateRoleRequest { RoleName = psvRoleName, AssumeRolePolicyDocument = trustPolicy }); });
+        try
+        {
+            var createResp = await sfnClient.CreateStateMachineAsync(new CreateStateMachineRequest
+            {
+                Name = psvSmName,
+                Definition = stateMachineDefinition,
+                RoleArn = $"arn:aws:iam::000000000000:role/{psvRoleName}"
+            });
+            psvSmArn = createResp.StateMachineArn;
+
+            results.Add(await runner.RunTestAsync("stepfunctions", "PublishStateMachineVersion", async () =>
+            {
+                var resp = await sfnClient.PublishStateMachineVersionAsync(new PublishStateMachineVersionRequest
+                {
+                    StateMachineArn = psvSmArn
+                });
+                if (resp == null || string.IsNullOrEmpty(resp.StateMachineVersionArn))
+                    throw new Exception("state machine version ARN is null");
+            }));
+
+            results.Add(await runner.RunTestAsync("stepfunctions", "ListStateMachineVersions", async () =>
+            {
+                var resp = await sfnClient.ListStateMachineVersionsAsync(new ListStateMachineVersionsRequest
+                {
+                    StateMachineArn = psvSmArn
+                });
+                if (resp.StateMachineVersions == null)
+                    throw new Exception("state machine versions list is null");
+            }));
+
+            results.Add(await runner.RunTestAsync("stepfunctions", "PublishStateMachineVersion_Second", async () =>
+            {
+                await sfnClient.UpdateStateMachineAsync(new UpdateStateMachineRequest
+                {
+                    StateMachineArn = psvSmArn,
+                    Definition = @"{""Comment"":""v2"",""StartAt"":""X"",""States"":{""X"":{""Type"":""Pass"",""End"":true}}}"
+                });
+                var resp = await sfnClient.PublishStateMachineVersionAsync(new PublishStateMachineVersionRequest
+                {
+                    StateMachineArn = psvSmArn
+                });
+                if (resp == null || string.IsNullOrEmpty(resp.StateMachineVersionArn))
+                    throw new Exception("second version ARN is null");
+            }));
+
+            string? versionArnToDelete = null;
+            results.Add(await runner.RunTestAsync("stepfunctions", "DeleteStateMachineVersion", async () =>
+            {
+                var listResp = await sfnClient.ListStateMachineVersionsAsync(new ListStateMachineVersionsRequest
+                {
+                    StateMachineArn = psvSmArn
+                });
+                if (listResp.StateMachineVersions != null && listResp.StateMachineVersions.Count > 0)
+                {
+                    versionArnToDelete = listResp.StateMachineVersions[0].StateMachineVersionArn;
+                    await sfnClient.DeleteStateMachineVersionAsync(new DeleteStateMachineVersionRequest
+                    {
+                        StateMachineVersionArn = versionArnToDelete
+                    });
+                }
+            }));
+
+            results.Add(await runner.RunTestAsync("stepfunctions", "DeleteStateMachineVersion_NonExistent", async () =>
+            {
+                try
+                {
+                    await sfnClient.DeleteStateMachineVersionAsync(new DeleteStateMachineVersionRequest
+                    {
+                        StateMachineVersionArn = $"arn:aws:states:{region}:000000000000:stateMachine:fake:version-1"
+                    });
+                    throw new Exception("expected error for non-existent state machine version");
+                }
+                catch (AmazonStepFunctionsException) { }
+            }));
+        }
+        finally
+        {
+            await TestHelpers.SafeCleanupAsync(async () => { await sfnClient.DeleteStateMachineAsync(new DeleteStateMachineRequest { StateMachineArn = psvSmArn }); });
+            await TestHelpers.SafeCleanupAsync(async () => { await iamClient.DeleteRoleAsync(new DeleteRoleRequest { RoleName = psvRoleName }); });
+        }
+
+        var aliasSmArn = "";
+        var aliasSmName = TestRunner.MakeUniqueName("AliasSM");
+        var aliasRoleName = TestRunner.MakeUniqueName("AliasRole");
+        var aliasName = TestRunner.MakeUniqueName("CSAlias");
+        await TestHelpers.SafeCleanupAsync(async () => { await iamClient.CreateRoleAsync(new CreateRoleRequest { RoleName = aliasRoleName, AssumeRolePolicyDocument = trustPolicy }); });
+        try
+        {
+            var createResp = await sfnClient.CreateStateMachineAsync(new CreateStateMachineRequest
+            {
+                Name = aliasSmName,
+                Definition = stateMachineDefinition,
+                RoleArn = $"arn:aws:iam::000000000000:role/{aliasRoleName}"
+            });
+            aliasSmArn = createResp.StateMachineArn;
+
+            results.Add(await runner.RunTestAsync("stepfunctions", "CreateStateMachineAlias", async () =>
+            {
+                var resp = await sfnClient.CreateStateMachineAliasAsync(new CreateStateMachineAliasRequest
+                {
+                    Name = aliasName,
+                    RoutingConfiguration = new List<RoutingConfigurationListItem>
+                    {
+                        new RoutingConfigurationListItem
+                        {
+                            StateMachineVersionArn = aliasSmArn,
+                            Weight = 100
+                        }
+                    }
+                });
+                if (resp == null || string.IsNullOrEmpty(resp.StateMachineAliasArn))
+                    throw new Exception("state machine alias ARN is null");
+            }));
+
+            results.Add(await runner.RunTestAsync("stepfunctions", "DescribeStateMachineAlias", async () =>
+            {
+                var aliasArn = $"arn:aws:states:{region}:000000000000:stateMachineAlias:{aliasName}";
+                var resp = await sfnClient.DescribeStateMachineAliasAsync(new DescribeStateMachineAliasRequest
+                {
+                    StateMachineAliasArn = aliasArn
+                });
+                if (resp == null)
+                    throw new Exception("response is null");
+            }));
+
+            results.Add(await runner.RunTestAsync("stepfunctions", "ListStateMachineAliases", async () =>
+            {
+                var resp = await sfnClient.ListStateMachineAliasesAsync(new ListStateMachineAliasesRequest
+                {
+                    StateMachineArn = aliasSmArn
+                });
+                if (resp.StateMachineAliases == null)
+                    throw new Exception("state machine aliases list is null");
+            }));
+
+            results.Add(await runner.RunTestAsync("stepfunctions", "UpdateStateMachineAlias", async () =>
+            {
+                var aliasArn = $"arn:aws:states:{region}:000000000000:stateMachineAlias:{aliasName}";
+                await sfnClient.UpdateStateMachineAliasAsync(new UpdateStateMachineAliasRequest
+                {
+                    StateMachineAliasArn = aliasArn,
+                    RoutingConfiguration = new List<RoutingConfigurationListItem>
+                    {
+                        new RoutingConfigurationListItem
+                        {
+                            StateMachineVersionArn = aliasSmArn,
+                            Weight = 100
+                        }
+                    }
+                });
+            }));
+
+            results.Add(await runner.RunTestAsync("stepfunctions", "DeleteStateMachineAlias", async () =>
+            {
+                var aliasArn = $"arn:aws:states:{region}:000000000000:stateMachineAlias:{aliasName}";
+                await sfnClient.DeleteStateMachineAliasAsync(new DeleteStateMachineAliasRequest
+                {
+                    StateMachineAliasArn = aliasArn
+                });
+            }));
+
+            results.Add(await runner.RunTestAsync("stepfunctions", "DeleteStateMachineAlias_NonExistent", async () =>
+            {
+                try
+                {
+                    await sfnClient.DeleteStateMachineAliasAsync(new DeleteStateMachineAliasRequest
+                    {
+                        StateMachineAliasArn = $"arn:aws:states:{region}:000000000000:stateMachineAlias:nonexistent-xyz"
+                    });
+                    throw new Exception("expected error for non-existent alias");
+                }
+                catch (AmazonStepFunctionsException) { }
+            }));
+        }
+        finally
+        {
+            try { await sfnClient.DeleteStateMachineAliasAsync(new DeleteStateMachineAliasRequest { StateMachineAliasArn = $"arn:aws:states:{region}:000000000000:stateMachineAlias:{aliasName}" }); } catch { }
+            await TestHelpers.SafeCleanupAsync(async () => { await sfnClient.DeleteStateMachineAsync(new DeleteStateMachineRequest { StateMachineArn = aliasSmArn }); });
+            await TestHelpers.SafeCleanupAsync(async () => { await iamClient.DeleteRoleAsync(new DeleteRoleRequest { RoleName = aliasRoleName }); });
+        }
+
+        results.Add(await runner.RunTestAsync("stepfunctions", "CreateStateMachineAlias_Duplicate", async () =>
+        {
+            var dupAliasName = TestRunner.MakeUniqueName("DupAlias");
+            var dupAliasRoleName = TestRunner.MakeUniqueName("DupAliasRole");
+            var dupAliasSmName = TestRunner.MakeUniqueName("DupAliasSM");
+            await TestHelpers.SafeCleanupAsync(async () => { await iamClient.CreateRoleAsync(new CreateRoleRequest { RoleName = dupAliasRoleName, AssumeRolePolicyDocument = trustPolicy }); });
+            try
+            {
+                var createResp = await sfnClient.CreateStateMachineAsync(new CreateStateMachineRequest
+                {
+                    Name = dupAliasSmName,
+                    Definition = stateMachineDefinition,
+                    RoleArn = $"arn:aws:iam::000000000000:role/{dupAliasRoleName}"
+                });
+                var dupSmArn = createResp.StateMachineArn;
+                try
+                {
+                    await sfnClient.CreateStateMachineAliasAsync(new CreateStateMachineAliasRequest
+                    {
+                        Name = dupAliasName,
+                        RoutingConfiguration = new List<RoutingConfigurationListItem>
+                        {
+                            new RoutingConfigurationListItem { StateMachineVersionArn = dupSmArn, Weight = 100 }
+                        }
+                    });
+                    try
+                    {
+                        await sfnClient.CreateStateMachineAliasAsync(new CreateStateMachineAliasRequest
+                        {
+                            Name = dupAliasName,
+                            RoutingConfiguration = new List<RoutingConfigurationListItem>
+                            {
+                                new RoutingConfigurationListItem { StateMachineVersionArn = dupSmArn, Weight = 100 }
+                            }
+                        });
+                        throw new Exception("expected error for duplicate alias");
+                    }
+                    catch (AmazonStepFunctionsException) { }
+                }
+                finally
+                {
+                    try { await sfnClient.DeleteStateMachineAliasAsync(new DeleteStateMachineAliasRequest { StateMachineAliasArn = $"arn:aws:states:{region}:000000000000:stateMachineAlias:{dupAliasName}" }); } catch { }
+                    await TestHelpers.SafeCleanupAsync(async () => { await sfnClient.DeleteStateMachineAsync(new DeleteStateMachineRequest { StateMachineArn = dupSmArn }); });
+                }
+            }
+            finally
+            {
+                await TestHelpers.SafeCleanupAsync(async () => { await iamClient.DeleteRoleAsync(new DeleteRoleRequest { RoleName = dupAliasRoleName }); });
+            }
+        }));
+
+        results.Add(await runner.RunTestAsync("stepfunctions", "ListStateMachines_Pagination", async () =>
+        {
+            var resp = await sfnClient.ListStateMachinesAsync(new ListStateMachinesRequest { MaxResults = 10 });
+            if (resp.StateMachines == null)
+                throw new Exception("state machines list is null");
+            if (!string.IsNullOrEmpty(resp.NextToken))
+            {
+                var resp2 = await sfnClient.ListStateMachinesAsync(new ListStateMachinesRequest
+                {
+                    MaxResults = 10,
+                    NextToken = resp.NextToken
+                });
+                if (resp2.StateMachines == null)
+                    throw new Exception("state machines list page 2 is null");
             }
         }));
 

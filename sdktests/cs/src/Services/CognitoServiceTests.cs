@@ -22,7 +22,6 @@ public static class CognitoServiceTests
 
         try
         {
-            // Test 1: CreateUserPool
             results.Add(await runner.RunTestAsync("cognito", "CreateUserPool", async () =>
             {
                 var resp = await cognitoClient.CreateUserPoolAsync(new CreateUserPoolRequest
@@ -47,7 +46,6 @@ public static class CognitoServiceTests
 
             if (!string.IsNullOrEmpty(userPoolId))
             {
-                // Test 2: DescribeUserPool
                 results.Add(await runner.RunTestAsync("cognito", "DescribeUserPool", async () =>
                 {
                     var resp = await cognitoClient.DescribeUserPoolAsync(new DescribeUserPoolRequest
@@ -58,7 +56,6 @@ public static class CognitoServiceTests
                         throw new Exception("UserPool is null");
                 }));
 
-                // Test 3: CreateUserPoolClient
                 results.Add(await runner.RunTestAsync("cognito", "CreateUserPoolClient", async () =>
                 {
                     var resp = await cognitoClient.CreateUserPoolClientAsync(new CreateUserPoolClientRequest
@@ -71,7 +68,6 @@ public static class CognitoServiceTests
                     clientId = resp.UserPoolClient.ClientId;
                 }));
 
-                // Test 4: DescribeUserPoolClient
                 if (!string.IsNullOrEmpty(clientId))
                 {
                     results.Add(await runner.RunTestAsync("cognito", "DescribeUserPoolClient", async () =>
@@ -85,7 +81,6 @@ public static class CognitoServiceTests
                             throw new Exception("UserPoolClient is null");
                     }));
 
-                    // Test 5: UpdateUserPoolClient
                     results.Add(await runner.RunTestAsync("cognito", "UpdateUserPoolClient", async () =>
                     {
                         var resp = await cognitoClient.UpdateUserPoolClientAsync(new UpdateUserPoolClientRequest
@@ -99,7 +94,6 @@ public static class CognitoServiceTests
                     }));
                 }
 
-                // Test 6: CreateUserPoolDomain
                 results.Add(await runner.RunTestAsync("cognito", "CreateUserPoolDomain", async () =>
                 {
                     await cognitoClient.CreateUserPoolDomainAsync(new CreateUserPoolDomainRequest
@@ -109,7 +103,6 @@ public static class CognitoServiceTests
                     });
                 }));
 
-                // Test 7: DescribeUserPoolDomain
                 results.Add(await runner.RunTestAsync("cognito", "DescribeUserPoolDomain", async () =>
                 {
                     var resp = await cognitoClient.DescribeUserPoolDomainAsync(new DescribeUserPoolDomainRequest
@@ -120,7 +113,6 @@ public static class CognitoServiceTests
                         throw new Exception("DomainDescription is null");
                 }));
 
-                // Test 8: ListUserPoolClients
                 results.Add(await runner.RunTestAsync("cognito", "ListUserPoolClients", async () =>
                 {
                     var resp = await cognitoClient.ListUserPoolClientsAsync(new ListUserPoolClientsRequest
@@ -134,7 +126,6 @@ public static class CognitoServiceTests
                         throw new Exception("Expected at least 1 client");
                 }));
 
-                // Test 9: ListUserPools
                 results.Add(await runner.RunTestAsync("cognito", "ListUserPools", async () =>
                 {
                     var resp = await cognitoClient.ListUserPoolsAsync(new ListUserPoolsRequest
@@ -147,7 +138,6 @@ public static class CognitoServiceTests
                         throw new Exception("Expected at least 1 pool");
                 }));
 
-                // Test 10: CreateGroup
                 results.Add(await runner.RunTestAsync("cognito", "CreateGroup", async () =>
                 {
                     var resp = await cognitoClient.CreateGroupAsync(new CreateGroupRequest
@@ -159,7 +149,6 @@ public static class CognitoServiceTests
                         throw new Exception("Group is null");
                 }));
 
-                // Test 11: ListGroups
                 results.Add(await runner.RunTestAsync("cognito", "ListGroups", async () =>
                 {
                     var resp = await cognitoClient.ListGroupsAsync(new ListGroupsRequest
@@ -172,7 +161,6 @@ public static class CognitoServiceTests
                         throw new Exception("Expected at least 1 group");
                 }));
 
-                // Test 12: AdminCreateUser
                 results.Add(await runner.RunTestAsync("cognito", "AdminCreateUser", async () =>
                 {
                     var resp = await cognitoClient.AdminCreateUserAsync(new AdminCreateUserRequest
@@ -188,7 +176,6 @@ public static class CognitoServiceTests
                         throw new Exception($"Expected FORCE_CHANGE_PASSWORD, got {resp.User.UserStatus}");
                 }));
 
-                // Test 13: AdminGetUser
                 results.Add(await runner.RunTestAsync("cognito", "AdminGetUser", async () =>
                 {
                     var resp = await cognitoClient.AdminGetUserAsync(new AdminGetUserRequest
@@ -200,7 +187,6 @@ public static class CognitoServiceTests
                         throw new Exception("Username mismatch");
                 }));
 
-                // Test 14: ListUsers
                 results.Add(await runner.RunTestAsync("cognito", "ListUsers", async () =>
                 {
                     var resp = await cognitoClient.ListUsersAsync(new ListUsersRequest
@@ -213,7 +199,6 @@ public static class CognitoServiceTests
                         throw new Exception("Expected at least 1 user");
                 }));
 
-                // Test 15: CreateResourceServer
                 results.Add(await runner.RunTestAsync("cognito", "CreateResourceServer", async () =>
                 {
                     var resp = await cognitoClient.CreateResourceServerAsync(new CreateResourceServerRequest
@@ -226,7 +211,6 @@ public static class CognitoServiceTests
                         throw new Exception("ResourceServer is null");
                 }));
 
-                // Test 16: ListResourceServers
                 results.Add(await runner.RunTestAsync("cognito", "ListResourceServers", async () =>
                 {
                     var resp = await cognitoClient.ListResourceServersAsync(new ListResourceServersRequest
@@ -239,7 +223,6 @@ public static class CognitoServiceTests
                         throw new Exception("Expected at least 1 resource server");
                 }));
 
-                // Test 17: UpdateUserPool
                 results.Add(await runner.RunTestAsync("cognito", "UpdateUserPool", async () =>
                 {
                     await cognitoClient.UpdateUserPoolAsync(new UpdateUserPoolRequest
@@ -259,7 +242,6 @@ public static class CognitoServiceTests
                     });
                 }));
 
-                // Test 18: CreateIdentityProvider
                 results.Add(await runner.RunTestAsync("cognito", "CreateIdentityProvider", async () =>
                 {
                     var resp = await cognitoClient.CreateIdentityProviderAsync(new CreateIdentityProviderRequest
@@ -278,7 +260,6 @@ public static class CognitoServiceTests
                         throw new Exception("IdentityProvider is null");
                 }));
 
-                // Test 19: ListIdentityProviders
                 results.Add(await runner.RunTestAsync("cognito", "ListIdentityProviders", async () =>
                 {
                     var resp = await cognitoClient.ListIdentityProvidersAsync(new ListIdentityProvidersRequest
@@ -291,7 +272,6 @@ public static class CognitoServiceTests
                         throw new Exception("Expected at least 1 identity provider");
                 }));
 
-                // Test 20: SetUserPoolMfaConfig
                 results.Add(await runner.RunTestAsync("cognito", "SetUserPoolMfaConfig", async () =>
                 {
                     await cognitoClient.SetUserPoolMfaConfigAsync(new SetUserPoolMfaConfigRequest
@@ -308,7 +288,6 @@ public static class CognitoServiceTests
                     });
                 }));
 
-                // Test 21: GetUserPoolMfaConfig
                 results.Add(await runner.RunTestAsync("cognito", "GetUserPoolMfaConfig", async () =>
                 {
                     var resp = await cognitoClient.GetUserPoolMfaConfigAsync(new GetUserPoolMfaConfigRequest
@@ -319,7 +298,6 @@ public static class CognitoServiceTests
                         throw new Exception("Response is null");
                 }));
 
-                // Test 22: AdminDisableUser
                 results.Add(await runner.RunTestAsync("cognito", "AdminDisableUser", async () =>
                 {
                     await cognitoClient.AdminDisableUserAsync(new AdminDisableUserRequest
@@ -329,7 +307,6 @@ public static class CognitoServiceTests
                     });
                 }));
 
-                // Test 23: AdminEnableUser
                 results.Add(await runner.RunTestAsync("cognito", "AdminEnableUser", async () =>
                 {
                     await cognitoClient.AdminEnableUserAsync(new AdminEnableUserRequest
@@ -339,7 +316,6 @@ public static class CognitoServiceTests
                     });
                 }));
 
-                // Test 24: AdminDeleteUser
                 results.Add(await runner.RunTestAsync("cognito", "AdminDeleteUser", async () =>
                 {
                     await cognitoClient.AdminDeleteUserAsync(new AdminDeleteUserRequest
@@ -349,7 +325,6 @@ public static class CognitoServiceTests
                     });
                 }));
 
-                // Test 25: DeleteUserPoolDomain
                 results.Add(await runner.RunTestAsync("cognito", "DeleteUserPoolDomain", async () =>
                 {
                     await cognitoClient.DeleteUserPoolDomainAsync(new DeleteUserPoolDomainRequest
@@ -359,7 +334,6 @@ public static class CognitoServiceTests
                     });
                 }));
 
-                // Test 26: DeleteUserPoolClient
                 if (!string.IsNullOrEmpty(clientId))
                 {
                     results.Add(await runner.RunTestAsync("cognito", "DeleteUserPoolClient", async () =>
@@ -372,7 +346,6 @@ public static class CognitoServiceTests
                     }));
                 }
 
-                // Test 27: DeleteGroup
                 results.Add(await runner.RunTestAsync("cognito", "DeleteGroup", async () =>
                 {
                     await cognitoClient.DeleteGroupAsync(new DeleteGroupRequest
@@ -382,7 +355,6 @@ public static class CognitoServiceTests
                     });
                 }));
 
-                // Test 28: GetCSVHeader
                 results.Add(await runner.RunTestAsync("cognito", "GetCSVHeader", async () =>
                 {
                     var resp = await cognitoClient.GetCSVHeaderAsync(new GetCSVHeaderRequest
@@ -393,7 +365,6 @@ public static class CognitoServiceTests
                         throw new Exception("CSVHeader is null or empty");
                 }));
 
-                // Test 29: DescribeRiskConfiguration
                 results.Add(await runner.RunTestAsync("cognito", "DescribeRiskConfiguration", async () =>
                 {
                     var resp = await cognitoClient.DescribeRiskConfigurationAsync(new DescribeRiskConfigurationRequest
@@ -404,7 +375,695 @@ public static class CognitoServiceTests
                         throw new Exception("Response is null");
                 }));
 
-                // Test 30: DeleteUserPool
+                results.Add(await runner.RunTestAsync("cognito", "DescribeIdentityProvider", async () =>
+                {
+                    var resp = await cognitoClient.DescribeIdentityProviderAsync(new DescribeIdentityProviderRequest
+                    {
+                        UserPoolId = userPoolId,
+                        ProviderName = "TestProvider",
+                    });
+                    if (resp.IdentityProvider == null)
+                        throw new Exception("IdentityProvider is null");
+                    if (resp.IdentityProvider.ProviderName != "TestProvider")
+                        throw new Exception($"ProviderName mismatch: got {resp.IdentityProvider.ProviderName}");
+                    if (resp.IdentityProvider.ProviderType != "Facebook")
+                        throw new Exception($"ProviderType mismatch: got {resp.IdentityProvider.ProviderType}");
+                }));
+
+                results.Add(await runner.RunTestAsync("cognito", "UpdateIdentityProvider", async () =>
+                {
+                    await cognitoClient.UpdateIdentityProviderAsync(new UpdateIdentityProviderRequest
+                    {
+                        UserPoolId = userPoolId,
+                        ProviderName = "TestProvider",
+                        ProviderDetails = new Dictionary<string, string>
+                        {
+                            { "updated_key", "updated_value" },
+                        },
+                    });
+                    var descResp = await cognitoClient.DescribeIdentityProviderAsync(new DescribeIdentityProviderRequest
+                    {
+                        UserPoolId = userPoolId,
+                        ProviderName = "TestProvider",
+                    });
+                    if (descResp.IdentityProvider.ProviderDetails == null)
+                        throw new Exception("ProviderDetails is null after update");
+                    if (descResp.IdentityProvider.ProviderDetails.TryGetValue("updated_key", out var val) && val != "updated_value")
+                        throw new Exception("ProviderDetails not updated");
+                }));
+
+                results.Add(await runner.RunTestAsync("cognito", "DeleteIdentityProvider", async () =>
+                {
+                    var delProvider = TestRunner.MakeUniqueName("CSDelProvider");
+                    await cognitoClient.CreateIdentityProviderAsync(new CreateIdentityProviderRequest
+                    {
+                        UserPoolId = userPoolId,
+                        ProviderName = delProvider,
+                        ProviderType = "Google",
+                        ProviderDetails = new Dictionary<string, string>
+                        {
+                            { "client_id", "test" },
+                        },
+                    });
+                    await cognitoClient.DeleteIdentityProviderAsync(new DeleteIdentityProviderRequest
+                    {
+                        UserPoolId = userPoolId,
+                        ProviderName = delProvider,
+                    });
+                    try
+                    {
+                        await cognitoClient.DescribeIdentityProviderAsync(new DescribeIdentityProviderRequest
+                        {
+                            UserPoolId = userPoolId,
+                            ProviderName = delProvider,
+                        });
+                        throw new Exception("expected ResourceNotFoundException after delete");
+                    }
+                    catch (ResourceNotFoundException)
+                    {
+                    }
+                }));
+
+                results.Add(await runner.RunTestAsync("cognito", "DescribeResourceServer", async () =>
+                {
+                    var resp = await cognitoClient.DescribeResourceServerAsync(new DescribeResourceServerRequest
+                    {
+                        UserPoolId = userPoolId,
+                        Identifier = resourceServerId,
+                    });
+                    if (resp.ResourceServer == null)
+                        throw new Exception("ResourceServer is null");
+                    if (resp.ResourceServer.Identifier != resourceServerId)
+                        throw new Exception($"Identifier mismatch: got {resp.ResourceServer.Identifier}");
+                    if (resp.ResourceServer.Name != "Test Resource Server")
+                        throw new Exception($"Name mismatch: got {resp.ResourceServer.Name}");
+                }));
+
+                results.Add(await runner.RunTestAsync("cognito", "UpdateResourceServer", async () =>
+                {
+                    var resp = await cognitoClient.UpdateResourceServerAsync(new UpdateResourceServerRequest
+                    {
+                        UserPoolId = userPoolId,
+                        Identifier = resourceServerId,
+                        Name = "Updated Resource Server",
+                        Scopes = new List<ResourceServerScopeType>
+                        {
+                            new ResourceServerScopeType { ScopeName = "read", ScopeDescription = "Read access" },
+                        },
+                    });
+                    if (resp.ResourceServer == null)
+                        throw new Exception("ResourceServer is null");
+                    if (resp.ResourceServer.Name != "Updated Resource Server")
+                        throw new Exception($"Name not updated: got {resp.ResourceServer.Name}");
+                }));
+
+                results.Add(await runner.RunTestAsync("cognito", "DeleteResourceServer", async () =>
+                {
+                    var delRs = TestRunner.MakeUniqueName("CSDelRS");
+                    await cognitoClient.CreateResourceServerAsync(new CreateResourceServerRequest
+                    {
+                        UserPoolId = userPoolId,
+                        Identifier = delRs,
+                        Name = "Deletable RS",
+                    });
+                    await cognitoClient.DeleteResourceServerAsync(new DeleteResourceServerRequest
+                    {
+                        UserPoolId = userPoolId,
+                        Identifier = delRs,
+                    });
+                    try
+                    {
+                        await cognitoClient.DescribeResourceServerAsync(new DescribeResourceServerRequest
+                        {
+                            UserPoolId = userPoolId,
+                            Identifier = delRs,
+                        });
+                        throw new Exception("expected ResourceNotFoundException after delete");
+                    }
+                    catch (ResourceNotFoundException)
+                    {
+                    }
+                }));
+
+                results.Add(await runner.RunTestAsync("cognito", "UpdateUserPoolDomain", async () =>
+                {
+                    var udDomain = TestRunner.MakeUniqueName("CSUDDomain");
+                    await cognitoClient.CreateUserPoolDomainAsync(new CreateUserPoolDomainRequest
+                    {
+                        Domain = udDomain,
+                        UserPoolId = userPoolId,
+                    });
+                    try
+                    {
+                        var resp = await cognitoClient.UpdateUserPoolDomainAsync(new UpdateUserPoolDomainRequest
+                        {
+                            Domain = udDomain,
+                            UserPoolId = userPoolId,
+                        });
+                        if (string.IsNullOrEmpty(resp.CloudFrontDomain))
+                            throw new Exception("CloudFrontDomain is null or empty");
+                    }
+                    finally
+                    {
+                        await TestHelpers.SafeCleanupAsync(async () => { await cognitoClient.DeleteUserPoolDomainAsync(new DeleteUserPoolDomainRequest { Domain = udDomain, UserPoolId = userPoolId }); });
+                    }
+                }));
+
+                results.Add(await runner.RunTestAsync("cognito", "GetGroup", async () =>
+                {
+                    var getGroupName = TestRunner.MakeUniqueName("CSGetGroup");
+                    await cognitoClient.CreateGroupAsync(new CreateGroupRequest
+                    {
+                        GroupName = getGroupName,
+                        UserPoolId = userPoolId,
+                    });
+                    try
+                    {
+                        var resp = await cognitoClient.GetGroupAsync(new GetGroupRequest
+                        {
+                            GroupName = getGroupName,
+                            UserPoolId = userPoolId,
+                        });
+                        if (resp.Group == null)
+                            throw new Exception("Group is null");
+                        if (resp.Group.GroupName != getGroupName)
+                            throw new Exception($"GroupName mismatch: got {resp.Group.GroupName}");
+                        if (resp.Group.UserPoolId != userPoolId)
+                            throw new Exception($"UserPoolId mismatch: got {resp.Group.UserPoolId}");
+                    }
+                    finally
+                    {
+                        await TestHelpers.SafeCleanupAsync(async () => { await cognitoClient.DeleteGroupAsync(new DeleteGroupRequest { GroupName = getGroupName, UserPoolId = userPoolId }); });
+                    }
+                }));
+
+                results.Add(await runner.RunTestAsync("cognito", "UpdateGroup", async () =>
+                {
+                    var ugGroupName = TestRunner.MakeUniqueName("CSUGGroup");
+                    await cognitoClient.CreateGroupAsync(new CreateGroupRequest
+                    {
+                        GroupName = ugGroupName,
+                        UserPoolId = userPoolId,
+                        Description = "Original description",
+                    });
+                    try
+                    {
+                        await cognitoClient.UpdateGroupAsync(new UpdateGroupRequest
+                        {
+                            GroupName = ugGroupName,
+                            UserPoolId = userPoolId,
+                            Description = "Updated description",
+                            Precedence = 10,
+                        });
+                        var resp = await cognitoClient.GetGroupAsync(new GetGroupRequest
+                        {
+                            GroupName = ugGroupName,
+                            UserPoolId = userPoolId,
+                        });
+                        if (resp.Group.Description != "Updated description")
+                            throw new Exception($"Description not updated: got {resp.Group.Description}");
+                    }
+                    finally
+                    {
+                        await TestHelpers.SafeCleanupAsync(async () => { await cognitoClient.DeleteGroupAsync(new DeleteGroupRequest { GroupName = ugGroupName, UserPoolId = userPoolId }); });
+                    }
+                }));
+
+                results.Add(await runner.RunTestAsync("cognito", "AdminUpdateUserAttributes", async () =>
+                {
+                    var attrUser2 = TestRunner.MakeUniqueName("CSAttrUser2");
+                    await cognitoClient.AdminCreateUserAsync(new AdminCreateUserRequest
+                    {
+                        UserPoolId = userPoolId,
+                        Username = attrUser2,
+                        TemporaryPassword = "TempPass123!",
+                        MessageAction = MessageActionType.SUPPRESS,
+                    });
+                    try
+                    {
+                        await cognitoClient.AdminUpdateUserAttributesAsync(new AdminUpdateUserAttributesRequest
+                        {
+                            UserPoolId = userPoolId,
+                            Username = attrUser2,
+                            UserAttributes = new List<AttributeType>
+                            {
+                                new AttributeType { Name = "email", Value = "updated@example.com" },
+                                new AttributeType { Name = "phone_number", Value = "+441234567890" },
+                            },
+                        });
+                        var getResp = await cognitoClient.AdminGetUserAsync(new AdminGetUserRequest
+                        {
+                            UserPoolId = userPoolId,
+                            Username = attrUser2,
+                        });
+                        var found = getResp.UserAttributes.Any(a => a.Name == "email" && a.Value == "updated@example.com");
+                        if (!found)
+                            throw new Exception("updated email attribute not found");
+                    }
+                    finally
+                    {
+                        await TestHelpers.SafeCleanupAsync(async () => { await cognitoClient.AdminDeleteUserAsync(new AdminDeleteUserRequest { UserPoolId = userPoolId, Username = attrUser2 }); });
+                    }
+                }));
+
+                results.Add(await runner.RunTestAsync("cognito", "AdminDeleteUserAttributes", async () =>
+                {
+                    var daUser = TestRunner.MakeUniqueName("CSDAUser");
+                    await cognitoClient.AdminCreateUserAsync(new AdminCreateUserRequest
+                    {
+                        UserPoolId = userPoolId,
+                        Username = daUser,
+                        TemporaryPassword = "TempPass123!",
+                        MessageAction = MessageActionType.SUPPRESS,
+                        UserAttributes = new List<AttributeType>
+                        {
+                            new AttributeType { Name = "email", Value = "da@example.com" },
+                            new AttributeType { Name = "name", Value = "DA User" },
+                        },
+                    });
+                    try
+                    {
+                        await cognitoClient.AdminDeleteUserAttributesAsync(new AdminDeleteUserAttributesRequest
+                        {
+                            UserPoolId = userPoolId,
+                            Username = daUser,
+                            UserAttributeNames = new List<string> { "name" },
+                        });
+                        var getResp = await cognitoClient.AdminGetUserAsync(new AdminGetUserRequest
+                        {
+                            UserPoolId = userPoolId,
+                            Username = daUser,
+                        });
+                        var hasName = getResp.UserAttributes.Any(a => a.Name == "name");
+                        if (hasName)
+                            throw new Exception("attribute 'name' should have been deleted");
+                    }
+                    finally
+                    {
+                        await TestHelpers.SafeCleanupAsync(async () => { await cognitoClient.AdminDeleteUserAsync(new AdminDeleteUserRequest { UserPoolId = userPoolId, Username = daUser }); });
+                    }
+                }));
+
+                results.Add(await runner.RunTestAsync("cognito", "AdminResetUserPassword", async () =>
+                {
+                    var rpUser = TestRunner.MakeUniqueName("CSRPUser");
+                    await cognitoClient.AdminCreateUserAsync(new AdminCreateUserRequest
+                    {
+                        UserPoolId = userPoolId,
+                        Username = rpUser,
+                        TemporaryPassword = "TempPass123!",
+                        MessageAction = MessageActionType.SUPPRESS,
+                    });
+                    try
+                    {
+                        await cognitoClient.AdminSetUserPasswordAsync(new AdminSetUserPasswordRequest
+                        {
+                            UserPoolId = userPoolId,
+                            Username = rpUser,
+                            Password = "PermPass123!",
+                            Permanent = true,
+                        });
+                        await cognitoClient.AdminResetUserPasswordAsync(new AdminResetUserPasswordRequest
+                        {
+                            UserPoolId = userPoolId,
+                            Username = rpUser,
+                        });
+                        var getResp = await cognitoClient.AdminGetUserAsync(new AdminGetUserRequest
+                        {
+                            UserPoolId = userPoolId,
+                            Username = rpUser,
+                        });
+                        if (getResp.UserStatus != UserStatusType.FORCE_CHANGE_PASSWORD && getResp.UserStatus != UserStatusType.RESET_REQUIRED)
+                            throw new Exception($"expected FORCE_CHANGE_PASSWORD or RESET_REQUIRED after reset, got {getResp.UserStatus}");
+                    }
+                    finally
+                    {
+                        await TestHelpers.SafeCleanupAsync(async () => { await cognitoClient.AdminDeleteUserAsync(new AdminDeleteUserRequest { UserPoolId = userPoolId, Username = rpUser }); });
+                    }
+                }));
+
+                results.Add(await runner.RunTestAsync("cognito", "AdminSetUserPassword", async () =>
+                {
+                    var spUser = TestRunner.MakeUniqueName("CSSPUser");
+                    await cognitoClient.AdminCreateUserAsync(new AdminCreateUserRequest
+                    {
+                        UserPoolId = userPoolId,
+                        Username = spUser,
+                        TemporaryPassword = "TempPass123!",
+                        MessageAction = MessageActionType.SUPPRESS,
+                    });
+                    try
+                    {
+                        await cognitoClient.AdminSetUserPasswordAsync(new AdminSetUserPasswordRequest
+                        {
+                            UserPoolId = userPoolId,
+                            Username = spUser,
+                            Password = "NewPermPass123!",
+                            Permanent = true,
+                        });
+                        var getResp = await cognitoClient.AdminGetUserAsync(new AdminGetUserRequest
+                        {
+                            UserPoolId = userPoolId,
+                            Username = spUser,
+                        });
+                        if (getResp.UserStatus != UserStatusType.CONFIRMED)
+                            throw new Exception($"expected CONFIRMED after permanent password, got {getResp.UserStatus}");
+                    }
+                    finally
+                    {
+                        await TestHelpers.SafeCleanupAsync(async () => { await cognitoClient.AdminDeleteUserAsync(new AdminDeleteUserRequest { UserPoolId = userPoolId, Username = spUser }); });
+                    }
+                }));
+
+                results.Add(await runner.RunTestAsync("cognito", "SignUp", async () =>
+                {
+                    var signUpClientName = TestRunner.MakeUniqueName("CSSignUpClient");
+                    var signUpClientResp = await cognitoClient.CreateUserPoolClientAsync(new CreateUserPoolClientRequest
+                    {
+                        UserPoolId = userPoolId,
+                        ClientName = signUpClientName,
+                    });
+                    var signUpClientId = signUpClientResp.UserPoolClient.ClientId;
+                    try
+                    {
+                        var signUpUser = TestRunner.MakeUniqueName("CSSignUpUser");
+                        var resp = await cognitoClient.SignUpAsync(new SignUpRequest
+                        {
+                            ClientId = signUpClientId,
+                            Username = signUpUser,
+                            Password = "SignUpPass123!",
+                            UserAttributes = new List<AttributeType>
+                            {
+                                new AttributeType { Name = "email", Value = "signup@example.com" },
+                            },
+                        });
+                        if (string.IsNullOrEmpty(resp.UserSub))
+                            throw new Exception("UserSub is null or empty");
+                        if (resp.UserConfirmed == true)
+                            throw new Exception("expected UserConfirmed=false after SignUp");
+                    }
+                    finally
+                    {
+                        await TestHelpers.SafeCleanupAsync(async () => { await cognitoClient.DeleteUserPoolClientAsync(new DeleteUserPoolClientRequest { ClientId = signUpClientId, UserPoolId = userPoolId }); });
+                    }
+                }));
+
+                results.Add(await runner.RunTestAsync("cognito", "ConfirmSignUp", async () =>
+                {
+                    var confirmClientName = TestRunner.MakeUniqueName("CSConfirmClient");
+                    var confirmClientResp = await cognitoClient.CreateUserPoolClientAsync(new CreateUserPoolClientRequest
+                    {
+                        UserPoolId = userPoolId,
+                        ClientName = confirmClientName,
+                    });
+                    var confirmClientId = confirmClientResp.UserPoolClient.ClientId;
+                    try
+                    {
+                        var confirmUser = TestRunner.MakeUniqueName("CSConfirmUser");
+                        await cognitoClient.SignUpAsync(new SignUpRequest
+                        {
+                            ClientId = confirmClientId,
+                            Username = confirmUser,
+                            Password = "ConfirmPass123!",
+                        });
+                        await cognitoClient.ConfirmSignUpAsync(new ConfirmSignUpRequest
+                        {
+                            ClientId = confirmClientId,
+                            Username = confirmUser,
+                            ConfirmationCode = "123456",
+                        });
+                    }
+                    finally
+                    {
+                        await TestHelpers.SafeCleanupAsync(async () => { await cognitoClient.DeleteUserPoolClientAsync(new DeleteUserPoolClientRequest { ClientId = confirmClientId, UserPoolId = userPoolId }); });
+                    }
+                }));
+
+                results.Add(await runner.RunTestAsync("cognito", "AdminInitiateAuth", async () =>
+                {
+                    var authClientName = TestRunner.MakeUniqueName("CSAuthClient");
+                    var authClientResp = await cognitoClient.CreateUserPoolClientAsync(new CreateUserPoolClientRequest
+                    {
+                        UserPoolId = userPoolId,
+                        ClientName = authClientName,
+                    });
+                    var authClientId = authClientResp.UserPoolClient.ClientId;
+                    try
+                    {
+                        var authUser = TestRunner.MakeUniqueName("CSAuthUser");
+                        await cognitoClient.AdminCreateUserAsync(new AdminCreateUserRequest
+                        {
+                            UserPoolId = userPoolId,
+                            Username = authUser,
+                            TemporaryPassword = "TempPass123!",
+                            MessageAction = MessageActionType.SUPPRESS,
+                        });
+                        try
+                        {
+                            await cognitoClient.AdminSetUserPasswordAsync(new AdminSetUserPasswordRequest
+                            {
+                                UserPoolId = userPoolId,
+                                Username = authUser,
+                                Password = "AuthPass123!",
+                                Permanent = true,
+                            });
+                            var authResp = await cognitoClient.AdminInitiateAuthAsync(new AdminInitiateAuthRequest
+                            {
+                                UserPoolId = userPoolId,
+                                ClientId = authClientId,
+                                AuthFlow = AuthFlowType.ADMIN_NO_SRP_AUTH,
+                                AuthParameters = new Dictionary<string, string>
+                                {
+                                    { "USERNAME", authUser },
+                                    { "PASSWORD", "AuthPass123!" },
+                                },
+                            });
+                            if (authResp.AuthenticationResult == null)
+                                throw new Exception("AuthenticationResult is null");
+                            if (string.IsNullOrEmpty(authResp.AuthenticationResult.AccessToken))
+                                throw new Exception("AccessToken is null or empty");
+                            if (string.IsNullOrEmpty(authResp.AuthenticationResult.IdToken))
+                                throw new Exception("IdToken is null or empty");
+                        }
+                        finally
+                        {
+                            await TestHelpers.SafeCleanupAsync(async () => { await cognitoClient.AdminDeleteUserAsync(new AdminDeleteUserRequest { UserPoolId = userPoolId, Username = authUser }); });
+                        }
+                    }
+                    finally
+                    {
+                        await TestHelpers.SafeCleanupAsync(async () => { await cognitoClient.DeleteUserPoolClientAsync(new DeleteUserPoolClientRequest { ClientId = authClientId, UserPoolId = userPoolId }); });
+                    }
+                }));
+
+                results.Add(await runner.RunTestAsync("cognito", "AdminAddUserToGroup", async () =>
+                {
+                    var ugUser = TestRunner.MakeUniqueName("CSUGUser");
+                    var ugGroup = TestRunner.MakeUniqueName("CSUGGroup");
+                    await cognitoClient.AdminCreateUserAsync(new AdminCreateUserRequest
+                    {
+                        UserPoolId = userPoolId,
+                        Username = ugUser,
+                        TemporaryPassword = "TempPass123!",
+                        MessageAction = MessageActionType.SUPPRESS,
+                    });
+                    try
+                    {
+                        await cognitoClient.CreateGroupAsync(new CreateGroupRequest
+                        {
+                            GroupName = ugGroup,
+                            UserPoolId = userPoolId,
+                        });
+                        try
+                        {
+                            await cognitoClient.AdminAddUserToGroupAsync(new AdminAddUserToGroupRequest
+                            {
+                                UserPoolId = userPoolId,
+                                GroupName = ugGroup,
+                                Username = ugUser,
+                            });
+                        }
+                        finally
+                        {
+                            await TestHelpers.SafeCleanupAsync(async () => { await cognitoClient.DeleteGroupAsync(new DeleteGroupRequest { GroupName = ugGroup, UserPoolId = userPoolId }); });
+                        }
+                    }
+                    finally
+                    {
+                        await TestHelpers.SafeCleanupAsync(async () => { await cognitoClient.AdminDeleteUserAsync(new AdminDeleteUserRequest { UserPoolId = userPoolId, Username = ugUser }); });
+                    }
+                }));
+
+                results.Add(await runner.RunTestAsync("cognito", "ListUsersInGroup", async () =>
+                {
+                    var ug2User = TestRunner.MakeUniqueName("CSUG2User");
+                    var ug2Group = TestRunner.MakeUniqueName("CSUG2Group");
+                    await cognitoClient.AdminCreateUserAsync(new AdminCreateUserRequest
+                    {
+                        UserPoolId = userPoolId,
+                        Username = ug2User,
+                        TemporaryPassword = "TempPass123!",
+                        MessageAction = MessageActionType.SUPPRESS,
+                    });
+                    try
+                    {
+                        await cognitoClient.CreateGroupAsync(new CreateGroupRequest
+                        {
+                            GroupName = ug2Group,
+                            UserPoolId = userPoolId,
+                        });
+                        try
+                        {
+                            await cognitoClient.AdminAddUserToGroupAsync(new AdminAddUserToGroupRequest
+                            {
+                                UserPoolId = userPoolId,
+                                GroupName = ug2Group,
+                                Username = ug2User,
+                            });
+                            var listResp = await cognitoClient.ListUsersInGroupAsync(new ListUsersInGroupRequest
+                            {
+                                UserPoolId = userPoolId,
+                                GroupName = ug2Group,
+                            });
+                            var found = listResp.Users.Any(u => u.Username == ug2User);
+                            if (!found)
+                                throw new Exception("user not found in ListUsersInGroup");
+                            await cognitoClient.AdminRemoveUserFromGroupAsync(new AdminRemoveUserFromGroupRequest
+                            {
+                                UserPoolId = userPoolId,
+                                GroupName = ug2Group,
+                                Username = ug2User,
+                            });
+                            var listResp2 = await cognitoClient.ListUsersInGroupAsync(new ListUsersInGroupRequest
+                            {
+                                UserPoolId = userPoolId,
+                                GroupName = ug2Group,
+                            });
+                            var stillFound = listResp2.Users.Any(u => u.Username == ug2User);
+                            if (stillFound)
+                                throw new Exception("user still in group after AdminRemoveUserFromGroup");
+                        }
+                        finally
+                        {
+                            await TestHelpers.SafeCleanupAsync(async () => { await cognitoClient.DeleteGroupAsync(new DeleteGroupRequest { GroupName = ug2Group, UserPoolId = userPoolId }); });
+                        }
+                    }
+                    finally
+                    {
+                        await TestHelpers.SafeCleanupAsync(async () => { await cognitoClient.AdminDeleteUserAsync(new AdminDeleteUserRequest { UserPoolId = userPoolId, Username = ug2User }); });
+                    }
+                }));
+
+                results.Add(await runner.RunTestAsync("cognito", "AdminListGroupsForUser", async () =>
+                {
+                    var lgUser = TestRunner.MakeUniqueName("CSLGUser");
+                    var lgGroup1 = TestRunner.MakeUniqueName("CSLGGroup1");
+                    var lgGroup2 = TestRunner.MakeUniqueName("CSLGGroup2");
+                    await cognitoClient.AdminCreateUserAsync(new AdminCreateUserRequest
+                    {
+                        UserPoolId = userPoolId,
+                        Username = lgUser,
+                        TemporaryPassword = "TempPass123!",
+                        MessageAction = MessageActionType.SUPPRESS,
+                    });
+                    try
+                    {
+                        await cognitoClient.CreateGroupAsync(new CreateGroupRequest
+                        {
+                            GroupName = lgGroup1,
+                            UserPoolId = userPoolId,
+                        });
+                        try
+                        {
+                            await cognitoClient.CreateGroupAsync(new CreateGroupRequest
+                            {
+                                GroupName = lgGroup2,
+                                UserPoolId = userPoolId,
+                            });
+                            try
+                            {
+                                await cognitoClient.AdminAddUserToGroupAsync(new AdminAddUserToGroupRequest
+                                {
+                                    UserPoolId = userPoolId,
+                                    GroupName = lgGroup1,
+                                    Username = lgUser,
+                                });
+                                await cognitoClient.AdminAddUserToGroupAsync(new AdminAddUserToGroupRequest
+                                {
+                                    UserPoolId = userPoolId,
+                                    GroupName = lgGroup2,
+                                    Username = lgUser,
+                                });
+                                var resp = await cognitoClient.AdminListGroupsForUserAsync(new AdminListGroupsForUserRequest
+                                {
+                                    UserPoolId = userPoolId,
+                                    Username = lgUser,
+                                });
+                                if (resp.Groups.Count < 2)
+                                    throw new Exception($"expected at least 2 groups, got {resp.Groups.Count}");
+                            }
+                            finally
+                            {
+                                await TestHelpers.SafeCleanupAsync(async () => { await cognitoClient.DeleteGroupAsync(new DeleteGroupRequest { GroupName = lgGroup2, UserPoolId = userPoolId }); });
+                            }
+                        }
+                        finally
+                        {
+                            await TestHelpers.SafeCleanupAsync(async () => { await cognitoClient.DeleteGroupAsync(new DeleteGroupRequest { GroupName = lgGroup1, UserPoolId = userPoolId }); });
+                        }
+                    }
+                    finally
+                    {
+                        await TestHelpers.SafeCleanupAsync(async () => { await cognitoClient.AdminDeleteUserAsync(new AdminDeleteUserRequest { UserPoolId = userPoolId, Username = lgUser }); });
+                    }
+                }));
+
+                results.Add(await runner.RunTestAsync("cognito", "AdminUserGlobalSignOut", async () =>
+                {
+                    var gsoUser = TestRunner.MakeUniqueName("CSGSOUser");
+                    await cognitoClient.AdminCreateUserAsync(new AdminCreateUserRequest
+                    {
+                        UserPoolId = userPoolId,
+                        Username = gsoUser,
+                        TemporaryPassword = "TempPass123!",
+                        MessageAction = MessageActionType.SUPPRESS,
+                    });
+                    try
+                    {
+                        await cognitoClient.AdminSetUserPasswordAsync(new AdminSetUserPasswordRequest
+                        {
+                            UserPoolId = userPoolId,
+                            Username = gsoUser,
+                            Password = "GSOPass123!",
+                            Permanent = true,
+                        });
+                        await cognitoClient.AdminUserGlobalSignOutAsync(new AdminUserGlobalSignOutRequest
+                        {
+                            UserPoolId = userPoolId,
+                            Username = gsoUser,
+                        });
+                    }
+                    finally
+                    {
+                        await TestHelpers.SafeCleanupAsync(async () => { await cognitoClient.AdminDeleteUserAsync(new AdminDeleteUserRequest { UserPoolId = userPoolId, Username = gsoUser }); });
+                    }
+                }));
+
+                results.Add(await runner.RunTestAsync("cognito", "GlobalSignOut", async () =>
+                {
+                    try
+                    {
+                        await cognitoClient.GlobalSignOutAsync(new GlobalSignOutRequest
+                        {
+                            AccessToken = "dummy-token",
+                        });
+                        throw new Exception("expected NotAuthorizedException");
+                    }
+                    catch (NotAuthorizedException)
+                    {
+                    }
+                }));
+
                 results.Add(await runner.RunTestAsync("cognito", "DeleteUserPool", async () =>
                 {
                     await cognitoClient.DeleteUserPoolAsync(new DeleteUserPoolRequest
@@ -415,7 +1074,6 @@ public static class CognitoServiceTests
 
                 userPoolId = "";
 
-                // Test 31: TagResource
                 results.Add(await runner.RunTestAsync("cognito", "TagResource", async () =>
                 {
                     var tagPoolName = TestRunner.MakeUniqueName("CSPoolTag");
@@ -437,11 +1095,10 @@ public static class CognitoServiceTests
                     }
                     finally
                     {
-                        try { await cognitoClient.DeleteUserPoolAsync(new DeleteUserPoolRequest { UserPoolId = createResp.UserPool.Id }); } catch { }
+                        await TestHelpers.SafeCleanupAsync(async () => { await cognitoClient.DeleteUserPoolAsync(new DeleteUserPoolRequest { UserPoolId = createResp.UserPool.Id }); });
                     }
                 }));
 
-                // Test 32: ListTagsForResource
                 results.Add(await runner.RunTestAsync("cognito", "ListTagsForResource", async () =>
                 {
                     var tagPoolName = TestRunner.MakeUniqueName("CSPoolListTags");
@@ -468,11 +1125,10 @@ public static class CognitoServiceTests
                     }
                     finally
                     {
-                        try { await cognitoClient.DeleteUserPoolAsync(new DeleteUserPoolRequest { UserPoolId = createResp.UserPool.Id }); } catch { }
+                        await TestHelpers.SafeCleanupAsync(async () => { await cognitoClient.DeleteUserPoolAsync(new DeleteUserPoolRequest { UserPoolId = createResp.UserPool.Id }); });
                     }
                 }));
 
-                // Test 33: UntagResource
                 results.Add(await runner.RunTestAsync("cognito", "UntagResource", async () =>
                 {
                     var tagPoolName = TestRunner.MakeUniqueName("CSPoolUntag");
@@ -504,28 +1160,11 @@ public static class CognitoServiceTests
                     }
                     finally
                     {
-                        try { await cognitoClient.DeleteUserPoolAsync(new DeleteUserPoolRequest { UserPoolId = createResp.UserPool.Id }); } catch { }
-                    }
-                }));
-
-                // Test 34: GlobalSignOut
-                results.Add(await runner.RunTestAsync("cognito", "GlobalSignOut", async () =>
-                {
-                    try
-                    {
-                        await cognitoClient.GlobalSignOutAsync(new GlobalSignOutRequest
-                        {
-                            AccessToken = "dummy-token",
-                        });
-                        throw new Exception("expected NotAuthorizedException");
-                    }
-                    catch (NotAuthorizedException)
-                    {
+                        await TestHelpers.SafeCleanupAsync(async () => { await cognitoClient.DeleteUserPoolAsync(new DeleteUserPoolRequest { UserPoolId = createResp.UserPool.Id }); });
                     }
                 }));
             }
 
-            // Test 35: DescribeUserPool_NonExistent
             results.Add(await runner.RunTestAsync("cognito", "DescribeUserPool_NonExistent", async () =>
             {
                 try
@@ -541,7 +1180,6 @@ public static class CognitoServiceTests
                 }
             }));
 
-            // Test 36: DeleteUserPool_NonExistent
             results.Add(await runner.RunTestAsync("cognito", "DeleteUserPool_NonExistent", async () =>
             {
                 try
@@ -557,7 +1195,6 @@ public static class CognitoServiceTests
                 }
             }));
 
-            // Test 37: AdminGetUser_NonExistent
             results.Add(await runner.RunTestAsync("cognito", "AdminGetUser_NonExistent", async () =>
             {
                 var errPoolName = TestRunner.MakeUniqueName("CSErrPool");
@@ -582,11 +1219,10 @@ public static class CognitoServiceTests
                 }
                 finally
                 {
-                    try { await cognitoClient.DeleteUserPoolAsync(new DeleteUserPoolRequest { UserPoolId = createResp.UserPool.Id }); } catch { }
+                    await TestHelpers.SafeCleanupAsync(async () => { await cognitoClient.DeleteUserPoolAsync(new DeleteUserPoolRequest { UserPoolId = createResp.UserPool.Id }); });
                 }
             }));
 
-            // Test 38: CreateUserPool_DuplicateName
             results.Add(await runner.RunTestAsync("cognito", "CreateUserPool_DuplicateName", async () =>
             {
                 var dupPoolName = TestRunner.MakeUniqueName("CSDupPool");
@@ -607,16 +1243,15 @@ public static class CognitoServiceTests
                     }
                     finally
                     {
-                        try { await cognitoClient.DeleteUserPoolAsync(new DeleteUserPoolRequest { UserPoolId = resp2.UserPool.Id }); } catch { }
+                        await TestHelpers.SafeCleanupAsync(async () => { await cognitoClient.DeleteUserPoolAsync(new DeleteUserPoolRequest { UserPoolId = resp2.UserPool.Id }); });
                     }
                 }
                 finally
                 {
-                    try { await cognitoClient.DeleteUserPoolAsync(new DeleteUserPoolRequest { UserPoolId = resp1.UserPool.Id }); } catch { }
+                    await TestHelpers.SafeCleanupAsync(async () => { await cognitoClient.DeleteUserPoolAsync(new DeleteUserPoolRequest { UserPoolId = resp1.UserPool.Id }); });
                 }
             }));
 
-            // Test 39: AdminCreateUser_VerifyAttributes
             results.Add(await runner.RunTestAsync("cognito", "AdminCreateUser_VerifyAttributes", async () =>
             {
                 var attrPoolName = TestRunner.MakeUniqueName("CSAttrPool");
@@ -648,11 +1283,10 @@ public static class CognitoServiceTests
                 }
                 finally
                 {
-                    try { await cognitoClient.DeleteUserPoolAsync(new DeleteUserPoolRequest { UserPoolId = createResp.UserPool.Id }); } catch { }
+                    await TestHelpers.SafeCleanupAsync(async () => { await cognitoClient.DeleteUserPoolAsync(new DeleteUserPoolRequest { UserPoolId = createResp.UserPool.Id }); });
                 }
             }));
 
-            // Test 40: ListUsers_ContainsCreated
             results.Add(await runner.RunTestAsync("cognito", "ListUsers_ContainsCreated", async () =>
             {
                 var listPoolName = TestRunner.MakeUniqueName("CSListPool");
@@ -680,11 +1314,10 @@ public static class CognitoServiceTests
                 }
                 finally
                 {
-                    try { await cognitoClient.DeleteUserPoolAsync(new DeleteUserPoolRequest { UserPoolId = createResp.UserPool.Id }); } catch { }
+                    await TestHelpers.SafeCleanupAsync(async () => { await cognitoClient.DeleteUserPoolAsync(new DeleteUserPoolRequest { UserPoolId = createResp.UserPool.Id }); });
                 }
             }));
 
-            // Test 41: ListGroups_ContainsCreated
             results.Add(await runner.RunTestAsync("cognito", "ListGroups_ContainsCreated", async () =>
             {
                 var grpPoolName = TestRunner.MakeUniqueName("CSGrpPool");
@@ -713,7 +1346,207 @@ public static class CognitoServiceTests
                 }
                 finally
                 {
-                    try { await cognitoClient.DeleteUserPoolAsync(new DeleteUserPoolRequest { UserPoolId = createResp.UserPool.Id }); } catch { }
+                    await TestHelpers.SafeCleanupAsync(async () => { await cognitoClient.DeleteUserPoolAsync(new DeleteUserPoolRequest { UserPoolId = createResp.UserPool.Id }); });
+                }
+            }));
+
+            results.Add(await runner.RunTestAsync("cognito", "GetGroup_NonExistent", async () =>
+            {
+                var nePoolName = TestRunner.MakeUniqueName("CSNEPool");
+                var createResp = await cognitoClient.CreateUserPoolAsync(new CreateUserPoolRequest
+                {
+                    PoolName = nePoolName,
+                });
+                try
+                {
+                    try
+                    {
+                        await cognitoClient.GetGroupAsync(new GetGroupRequest
+                        {
+                            GroupName = "nonexistent-group-xyz",
+                            UserPoolId = createResp.UserPool.Id,
+                        });
+                        throw new Exception("expected error for non-existent group");
+                    }
+                    catch (ResourceNotFoundException)
+                    {
+                    }
+                }
+                finally
+                {
+                    await TestHelpers.SafeCleanupAsync(async () => { await cognitoClient.DeleteUserPoolAsync(new DeleteUserPoolRequest { UserPoolId = createResp.UserPool.Id }); });
+                }
+            }));
+
+            results.Add(await runner.RunTestAsync("cognito", "DescribeIdentityProvider_NonExistent", async () =>
+            {
+                var nePoolName = TestRunner.MakeUniqueName("CSDIPPool");
+                var createResp = await cognitoClient.CreateUserPoolAsync(new CreateUserPoolRequest
+                {
+                    PoolName = nePoolName,
+                });
+                try
+                {
+                    try
+                    {
+                        await cognitoClient.DescribeIdentityProviderAsync(new DescribeIdentityProviderRequest
+                        {
+                            UserPoolId = createResp.UserPool.Id,
+                            ProviderName = "nonexistent-idp-xyz",
+                        });
+                        throw new Exception("expected error for non-existent identity provider");
+                    }
+                    catch (ResourceNotFoundException)
+                    {
+                    }
+                }
+                finally
+                {
+                    await TestHelpers.SafeCleanupAsync(async () => { await cognitoClient.DeleteUserPoolAsync(new DeleteUserPoolRequest { UserPoolId = createResp.UserPool.Id }); });
+                }
+            }));
+
+            results.Add(await runner.RunTestAsync("cognito", "DescribeResourceServer_NonExistent", async () =>
+            {
+                var nePoolName = TestRunner.MakeUniqueName("CSDRSPool");
+                var createResp = await cognitoClient.CreateUserPoolAsync(new CreateUserPoolRequest
+                {
+                    PoolName = nePoolName,
+                });
+                try
+                {
+                    try
+                    {
+                        await cognitoClient.DescribeResourceServerAsync(new DescribeResourceServerRequest
+                        {
+                            UserPoolId = createResp.UserPool.Id,
+                            Identifier = "nonexistent-rs-xyz",
+                        });
+                        throw new Exception("expected error for non-existent resource server");
+                    }
+                    catch (ResourceNotFoundException)
+                    {
+                    }
+                }
+                finally
+                {
+                    await TestHelpers.SafeCleanupAsync(async () => { await cognitoClient.DeleteUserPoolAsync(new DeleteUserPoolRequest { UserPoolId = createResp.UserPool.Id }); });
+                }
+            }));
+
+            results.Add(await runner.RunTestAsync("cognito", "DeleteIdentityProvider_NonExistent", async () =>
+            {
+                var nePoolName = TestRunner.MakeUniqueName("CSDLIPPool");
+                var createResp = await cognitoClient.CreateUserPoolAsync(new CreateUserPoolRequest
+                {
+                    PoolName = nePoolName,
+                });
+                try
+                {
+                    try
+                    {
+                        await cognitoClient.DeleteIdentityProviderAsync(new DeleteIdentityProviderRequest
+                        {
+                            UserPoolId = createResp.UserPool.Id,
+                            ProviderName = "nonexistent-idp-xyz",
+                        });
+                        throw new Exception("expected error for non-existent identity provider");
+                    }
+                    catch (ResourceNotFoundException)
+                    {
+                    }
+                }
+                finally
+                {
+                    await TestHelpers.SafeCleanupAsync(async () => { await cognitoClient.DeleteUserPoolAsync(new DeleteUserPoolRequest { UserPoolId = createResp.UserPool.Id }); });
+                }
+            }));
+
+            results.Add(await runner.RunTestAsync("cognito", "DeleteResourceServer_NonExistent", async () =>
+            {
+                var nePoolName = TestRunner.MakeUniqueName("CSDLRSPool");
+                var createResp = await cognitoClient.CreateUserPoolAsync(new CreateUserPoolRequest
+                {
+                    PoolName = nePoolName,
+                });
+                try
+                {
+                    try
+                    {
+                        await cognitoClient.DeleteResourceServerAsync(new DeleteResourceServerRequest
+                        {
+                            UserPoolId = createResp.UserPool.Id,
+                            Identifier = "nonexistent-rs-xyz",
+                        });
+                        throw new Exception("expected error for non-existent resource server");
+                    }
+                    catch (ResourceNotFoundException)
+                    {
+                    }
+                }
+                finally
+                {
+                    await TestHelpers.SafeCleanupAsync(async () => { await cognitoClient.DeleteUserPoolAsync(new DeleteUserPoolRequest { UserPoolId = createResp.UserPool.Id }); });
+                }
+            }));
+
+            results.Add(await runner.RunTestAsync("cognito", "ListUserPools_Pagination", async () =>
+            {
+                var pgTs = DateTime.UtcNow.Ticks.ToString();
+                var pgPoolIds = new List<string>();
+                for (var i = 0; i < 5; i++)
+                {
+                    var name = $"CSPagPool-{pgTs}-{i}";
+                    try
+                    {
+                        var createResp = await cognitoClient.CreateUserPoolAsync(new CreateUserPoolRequest
+                        {
+                            PoolName = name,
+                        });
+                        if (createResp.UserPool == null)
+                            throw new Exception($"UserPool is null for {name}");
+                        pgPoolIds.Add(createResp.UserPool.Id);
+                    }
+                    catch (Exception)
+                    {
+                        foreach (var pid in pgPoolIds)
+                        {
+                            await TestHelpers.SafeCleanupAsync(async () => { await cognitoClient.DeleteUserPoolAsync(new DeleteUserPoolRequest { UserPoolId = pid }); });
+                        }
+                        throw;
+                    }
+                }
+
+                try
+                {
+                    var pageCount = 0;
+                    string? nextToken = null;
+                    while (true)
+                    {
+                        var resp = await cognitoClient.ListUserPoolsAsync(new ListUserPoolsRequest
+                        {
+                            MaxResults = 2,
+                            NextToken = nextToken,
+                        });
+                        pageCount++;
+                        if (!string.IsNullOrEmpty(resp.NextToken))
+                        {
+                            nextToken = resp.NextToken;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                    if (pageCount < 2)
+                        throw new Exception($"expected at least 2 pages with MaxResults=2, got {pageCount}");
+                }
+                finally
+                {
+                    foreach (var pid in pgPoolIds)
+                    {
+                        await TestHelpers.SafeCleanupAsync(async () => { await cognitoClient.DeleteUserPoolAsync(new DeleteUserPoolRequest { UserPoolId = pid }); });
+                    }
                 }
             }));
         }
@@ -721,7 +1554,7 @@ public static class CognitoServiceTests
         {
             if (!string.IsNullOrEmpty(userPoolId))
             {
-                try { await cognitoClient.DeleteUserPoolAsync(new DeleteUserPoolRequest { UserPoolId = userPoolId }); } catch { }
+                await TestHelpers.SafeCleanupAsync(async () => { await cognitoClient.DeleteUserPoolAsync(new DeleteUserPoolRequest { UserPoolId = userPoolId }); });
             }
         }
 

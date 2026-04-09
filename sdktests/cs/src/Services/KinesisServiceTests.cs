@@ -637,6 +637,279 @@ public static class KinesisServiceTests
             catch (ResourceNotFoundException) { }
         }));
 
+        // === ARN-based tagging ===
+
+        string tagStreamARN = null;
+        var tagStreamName = TestRunner.MakeUniqueName("cs-tagarn");
+        await kinesisClient.CreateStreamAsync(new CreateStreamRequest { StreamName = tagStreamName, ShardCount = 1 });
+        try
+        {
+            await Task.Delay(1000);
+            var tagDesc = await kinesisClient.DescribeStreamAsync(new DescribeStreamRequest { StreamName = tagStreamName });
+            tagStreamARN = tagDesc.StreamDescription.StreamARN;
+
+            if (tagStreamARN != null)
+            {
+                results.Add(await runner.RunTestAsync("kinesis", "TagResource", async () =>
+                {
+                    await kinesisClient.TagResourceAsync(new TagResourceRequest
+                    {
+                        ResourceARN = tagStreamARN,
+                        Tags = new Dictionary<string, string> { { "TagTest", "value1" }, { "TagTest2", "value2" } }
+                    });
+                }));
+
+                results.Add(await runner.RunTestAsync("kinesis", "ListTagsForResource", async () =>
+                {
+                    var resp = await kinesisClient.ListTagsForResourceAsync(new ListTagsForResourceRequest { ResourceARN = tagStreamARN });
+                    if (resp.Tags == null || resp.Tags.Count < 2)
+                        throw new Exception($"Expected >= 2 tags, got {resp.Tags?.Count ?? 0}");
+                }));
+
+                results.Add(await runner.RunTestAsync("kinesis", "UntagResource", async () =>
+                {
+                    await kinesisClient.UntagResourceAsync(new UntagResourceRequest
+                    {
+                        ResourceARN = tagStreamARN,
+                        TagKeys = new List<string> { "TagTest" }
+                    });
+                    var resp = await kinesisClient.ListTagsForResourceAsync(new ListTagsForResourceRequest { ResourceARN = tagStreamARN });
+                    if (resp.Tags != null)
+                    {
+                        foreach (var t in resp.Tags)
+                            if (t.Key == "TagTest") throw new Exception("TagTest should have been removed");
+                    }
+                }));
+            }
+        }
+        finally
+        {
+            await CleanupStream(tagStreamName);
+        }
+
+        // === Account Settings ===
+
+        results.Add(await runner.RunTestAsync("kinesis", "DescribeAccountSettings", async () =>
+        {
+            await kinesisClient.DescribeAccountSettingsAsync(new DescribeAccountSettingsRequest());
+        }));
+
+        results.Add(await runner.RunTestAsync("kinesis", "UpdateAccountSettings", async () =>
+        {
+            await kinesisClient.UpdateAccountSettingsAsync(new UpdateAccountSettingsRequest());
+        }));
+
+        // === Resource Policy ===
+
+        string policyStreamARN = null;
+        var policyStreamName = TestRunner.MakeUniqueName("cs-policy");
+        await kinesisClient.CreateStreamAsync(new CreateStreamRequest { StreamName = policyStreamName, ShardCount = 1 });
+        try
+        {
+            await Task.Delay(1000);
+            var policyDesc = await kinesisClient.DescribeStreamAsync(new DescribeStreamRequest { StreamName = policyStreamName });
+            policyStreamARN = policyDesc.StreamDescription.StreamARN;
+
+            if (policyStreamARN != null)
+            {
+                results.Add(await runner.RunTestAsync("kinesis", "PutResourcePolicy", async () =>
+                {
+                    await kinesisClient.PutResourcePolicyAsync(new PutResourcePolicyRequest
+                    {
+                        ResourceARN = policyStreamARN,
+                        Policy = "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":\"*\",\"Action\":\"kinesis:*\",\"Resource\":\"*\"}]}"
+                    });
+                }));
+
+                results.Add(await runner.RunTestAsync("kinesis", "GetResourcePolicy", async () =>
+                {
+                    var resp = await kinesisClient.GetResourcePolicyAsync(new GetResourcePolicyRequest { ResourceARN = policyStreamARN });
+                    if (string.IsNullOrEmpty(resp.Policy))
+                        throw new Exception("Expected non-empty policy");
+                }));
+
+                results.Add(await runner.RunTestAsync("kinesis", "DeleteResourcePolicy", async () =>
+                {
+                    await kinesisClient.DeleteResourcePolicyAsync(new DeleteResourcePolicyRequest { ResourceARN = policyStreamARN });
+                    var resp = await kinesisClient.GetResourcePolicyAsync(new GetResourcePolicyRequest { ResourceARN = policyStreamARN });
+                    if (!string.IsNullOrEmpty(resp.Policy))
+                        throw new Exception("Expected empty policy after delete");
+                }));
+            }
+        }
+        finally
+        {
+            await CleanupStream(policyStreamName);
+        }
+
+        // === UpdateMaxRecordSize ===
+
+        string maxRecordStreamARN = null;
+        var maxRecStream = TestRunner.MakeUniqueName("cs-maxrec");
+        await kinesisClient.CreateStreamAsync(new CreateStreamRequest { StreamName = maxRecStream, ShardCount = 1 });
+        try
+        {
+            await Task.Delay(1000);
+            var maxRecDesc = await kinesisClient.DescribeStreamAsync(new DescribeStreamRequest { StreamName = maxRecStream });
+            maxRecordStreamARN = maxRecDesc.StreamDescription.StreamARN;
+
+            if (maxRecordStreamARN != null)
+            {
+                results.Add(await runner.RunTestAsync("kinesis", "UpdateMaxRecordSize", async () =>
+                {
+                    await kinesisClient.UpdateMaxRecordSizeAsync(new UpdateMaxRecordSizeRequest
+                    {
+                        StreamARN = maxRecordStreamARN,
+                        MaxRecordSizeInKiB = 1024
+                    });
+                }));
+            }
+        }
+        finally
+        {
+            await CleanupStream(maxRecStream);
+        }
+
+        // === UpdateStreamWarmThroughput ===
+
+        string warmStreamARN = null;
+        var warmStream = TestRunner.MakeUniqueName("cs-warm");
+        await kinesisClient.CreateStreamAsync(new CreateStreamRequest { StreamName = warmStream, ShardCount = 1 });
+        try
+        {
+            await Task.Delay(1000);
+            var warmDesc = await kinesisClient.DescribeStreamAsync(new DescribeStreamRequest { StreamName = warmStream });
+            warmStreamARN = warmDesc.StreamDescription.StreamARN;
+
+            if (warmStreamARN != null)
+            {
+                results.Add(await runner.RunTestAsync("kinesis", "UpdateStreamWarmThroughput", async () =>
+                {
+                    var resp = await kinesisClient.UpdateStreamWarmThroughputAsync(new UpdateStreamWarmThroughputRequest
+                    {
+                        StreamARN = warmStreamARN,
+                        WarmThroughputMiBps = 256
+                    });
+                    if (resp.WarmThroughput == null)
+                        throw new Exception("WarmThroughput is null");
+                }));
+            }
+        }
+        finally
+        {
+            await CleanupStream(warmStream);
+        }
+
+        // === Verification Tests ===
+
+        results.Add(await runner.RunTestAsync("kinesis", "DescribeStream_VerifyTimestamp", async () =>
+        {
+            var tsStream = TestRunner.MakeUniqueName("cs-ts");
+            await kinesisClient.CreateStreamAsync(new CreateStreamRequest { StreamName = tsStream, ShardCount = 1 });
+            try
+            {
+                await Task.Delay(500);
+                var resp = await kinesisClient.DescribeStreamAsync(new DescribeStreamRequest { StreamName = tsStream });
+                if (resp.StreamDescription.StreamCreationTimestamp == null)
+                    throw new Exception("StreamCreationTimestamp is null");
+            }
+            finally
+            {
+                await CleanupStream(tsStream);
+            }
+        }));
+
+        results.Add(await runner.RunTestAsync("kinesis", "DescribeStream_VerifyEncryption", async () =>
+        {
+            var encStream = TestRunner.MakeUniqueName("cs-enc");
+            await kinesisClient.CreateStreamAsync(new CreateStreamRequest { StreamName = encStream, ShardCount = 1 });
+            try
+            {
+                await Task.Delay(500);
+                await kinesisClient.StartStreamEncryptionAsync(new StartStreamEncryptionRequest
+                {
+                    StreamName = encStream,
+                    EncryptionType = EncryptionType.KMS,
+                    KeyId = "arn:aws:kms:us-east-1:123456789012:key/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+                });
+                var resp = await kinesisClient.DescribeStreamAsync(new DescribeStreamRequest { StreamName = encStream });
+                if (resp.StreamDescription.EncryptionType != EncryptionType.KMS)
+                    throw new Exception($"Expected KMS encryption, got {resp.StreamDescription.EncryptionType}");
+            }
+            finally
+            {
+                await CleanupStream(encStream);
+            }
+        }));
+
+        results.Add(await runner.RunTestAsync("kinesis", "ListTagsForResource_StreamCreated", async () =>
+        {
+            var tlcStream = TestRunner.MakeUniqueName("cs-tlcr");
+            await kinesisClient.CreateStreamAsync(new CreateStreamRequest
+            {
+                StreamName = tlcStream,
+                ShardCount = 1,
+                Tags = new Dictionary<string, string> { { "CreatedBy", "sdk-test" }, { "Project", "vorpalstacks" } }
+            });
+            try
+            {
+                await Task.Delay(500);
+                var descResp = await kinesisClient.DescribeStreamAsync(new DescribeStreamRequest { StreamName = tlcStream });
+                var resp = await kinesisClient.ListTagsForResourceAsync(new ListTagsForResourceRequest { ResourceARN = descResp.StreamDescription.StreamARN });
+                if (resp.Tags == null || resp.Tags.Count < 2)
+                    throw new Exception($"Expected >= 2 tags from stream creation, got {resp.Tags?.Count ?? 0}");
+            }
+            finally
+            {
+                await CleanupStream(tlcStream);
+            }
+        }));
+
+        results.Add(await runner.RunTestAsync("kinesis", "ListStreams_Pagination", async () =>
+        {
+            var pgTs = $"{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
+            var pgStreams = new List<string>();
+            try
+            {
+                for (int i = 0; i < 5; i++)
+                {
+                    var name = $"PagStr-{pgTs}-{i}";
+                    await kinesisClient.CreateStreamAsync(new CreateStreamRequest { StreamName = name, ShardCount = 1 });
+                    pgStreams.Add(name);
+                }
+
+                var allStreams = new List<string>();
+                string? nextToken = null;
+                do
+                {
+                    var resp = await kinesisClient.ListStreamsAsync(new ListStreamsRequest
+                    {
+                        Limit = 2,
+                        ExclusiveStartStreamName = nextToken
+                    });
+                    if (resp.StreamNames != null)
+                    {
+                        foreach (var sn in resp.StreamNames)
+                            if (sn.StartsWith($"PagStr-{pgTs}"))
+                                allStreams.Add(sn);
+                    }
+                    nextToken = resp.HasMoreStreams == true ? resp.StreamNames[^1] : null;
+                } while (nextToken != null);
+
+                if (allStreams.Count != 5)
+                    throw new Exception($"Expected 5 paginated streams, got {allStreams.Count}");
+            }
+            finally
+            {
+                foreach (var sn in pgStreams)
+                    await CleanupStream(sn);
+            }
+        }));
+
+        // === SubscribeToShard (streaming API — SKIP, requires event stream handling) ===
+
+        results.Add(new TestResult { Service = "kinesis", TestName = "SubscribeToShard", Status = "SKIP", Error = "Event stream API not supported in C# test framework" });
+
         return results;
     }
 }

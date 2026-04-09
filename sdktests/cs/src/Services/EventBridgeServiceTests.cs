@@ -204,8 +204,8 @@ public static class EventBridgeServiceTests
         }
         finally
         {
-            try { await eventBridgeClient.DeleteRuleAsync(new DeleteRuleRequest { Name = ruleName, EventBusName = busName }); } catch { }
-            try { await eventBridgeClient.DeleteEventBusAsync(new DeleteEventBusRequest { Name = busName }); } catch { }
+            await TestHelpers.SafeCleanupAsync(async () => { await eventBridgeClient.DeleteRuleAsync(new DeleteRuleRequest { Name = ruleName, EventBusName = busName }); });
+            await TestHelpers.SafeCleanupAsync(async () => { await eventBridgeClient.DeleteEventBusAsync(new DeleteEventBusRequest { Name = busName }); });
         }
 
         results.Add(await runner.RunTestAsync("events", "DescribeNonExistentRule", async () =>
@@ -275,7 +275,7 @@ public static class EventBridgeServiceTests
             }
             finally
             {
-                try { await eventBridgeClient.DeleteEventBusAsync(new DeleteEventBusRequest { Name = dupBus }); } catch { }
+                await TestHelpers.SafeCleanupAsync(async () => { await eventBridgeClient.DeleteEventBusAsync(new DeleteEventBusRequest { Name = dupBus }); });
             }
         }));
 
@@ -309,8 +309,8 @@ public static class EventBridgeServiceTests
             }
             finally
             {
-                try { await eventBridgeClient.DeleteRuleAsync(new DeleteRuleRequest { Name = rdRule, EventBusName = rdBus }); } catch { }
-                try { await eventBridgeClient.DeleteEventBusAsync(new DeleteEventBusRequest { Name = rdBus }); } catch { }
+                await TestHelpers.SafeCleanupAsync(async () => { await eventBridgeClient.DeleteRuleAsync(new DeleteRuleRequest { Name = rdRule, EventBusName = rdBus }); });
+                await TestHelpers.SafeCleanupAsync(async () => { await eventBridgeClient.DeleteEventBusAsync(new DeleteEventBusRequest { Name = rdBus }); });
             }
         }));
 
@@ -341,8 +341,8 @@ public static class EventBridgeServiceTests
             }
             finally
             {
-                try { await eventBridgeClient.DeleteRuleAsync(new DeleteRuleRequest { Name = epRule, EventBusName = epBus }); } catch { }
-                try { await eventBridgeClient.DeleteEventBusAsync(new DeleteEventBusRequest { Name = epBus }); } catch { }
+                await TestHelpers.SafeCleanupAsync(async () => { await eventBridgeClient.DeleteRuleAsync(new DeleteRuleRequest { Name = epRule, EventBusName = epBus }); });
+                await TestHelpers.SafeCleanupAsync(async () => { await eventBridgeClient.DeleteEventBusAsync(new DeleteEventBusRequest { Name = epBus }); });
             }
         }));
 
@@ -410,8 +410,8 @@ public static class EventBridgeServiceTests
             finally
             {
                 try { await eventBridgeClient.RemoveTargetsAsync(new RemoveTargetsRequest { Rule = trRule, EventBusName = trBus, Ids = new List<string> { trTarget } }); } catch { }
-                try { await eventBridgeClient.DeleteRuleAsync(new DeleteRuleRequest { Name = trRule, EventBusName = trBus }); } catch { }
-                try { await eventBridgeClient.DeleteEventBusAsync(new DeleteEventBusRequest { Name = trBus }); } catch { }
+                await TestHelpers.SafeCleanupAsync(async () => { await eventBridgeClient.DeleteRuleAsync(new DeleteRuleRequest { Name = trRule, EventBusName = trBus }); });
+                await TestHelpers.SafeCleanupAsync(async () => { await eventBridgeClient.DeleteEventBusAsync(new DeleteEventBusRequest { Name = trBus }); });
             }
         }));
 
@@ -445,8 +445,457 @@ public static class EventBridgeServiceTests
             finally
             {
                 try { await eventBridgeClient.RemoveTargetsAsync(new RemoveTargetsRequest { Rule = dtRule, EventBusName = dtBus, Ids = new List<string> { dtTarget } }); } catch { }
-                try { await eventBridgeClient.DeleteRuleAsync(new DeleteRuleRequest { Name = dtRule, EventBusName = dtBus }); } catch { }
-                try { await eventBridgeClient.DeleteEventBusAsync(new DeleteEventBusRequest { Name = dtBus }); } catch { }
+                await TestHelpers.SafeCleanupAsync(async () => { await eventBridgeClient.DeleteRuleAsync(new DeleteRuleRequest { Name = dtRule, EventBusName = dtBus }); });
+                await TestHelpers.SafeCleanupAsync(async () => { await eventBridgeClient.DeleteEventBusAsync(new DeleteEventBusRequest { Name = dtBus }); });
+            }
+        }));
+
+        var updateBusName = TestRunner.MakeUniqueName("UpdateBus");
+        try
+        {
+            await eventBridgeClient.CreateEventBusAsync(new CreateEventBusRequest { Name = updateBusName });
+
+            results.Add(await runner.RunTestAsync("events", "UpdateEventBus", async () =>
+            {
+                await eventBridgeClient.UpdateEventBusAsync(new UpdateEventBusRequest
+                {
+                    Name = updateBusName,
+                    Description = "Updated description"
+                });
+            }));
+
+            results.Add(await runner.RunTestAsync("events", "UpdateEventBus_VerifyDescription", async () =>
+            {
+                var resp = await eventBridgeClient.DescribeEventBusAsync(new DescribeEventBusRequest { Name = updateBusName });
+                if (resp.Description != "Updated description")
+                    throw new Exception($"expected 'Updated description', got '{resp.Description}'");
+            }));
+        }
+        finally
+        {
+            await TestHelpers.SafeCleanupAsync(async () => { await eventBridgeClient.DeleteEventBusAsync(new DeleteEventBusRequest { Name = updateBusName }); });
+        }
+
+        var archiveBusName = TestRunner.MakeUniqueName("ArchiveBus");
+        var archiveName = TestRunner.MakeUniqueName("TestArchive");
+        try
+        {
+            await eventBridgeClient.CreateEventBusAsync(new CreateEventBusRequest { Name = archiveBusName });
+
+            results.Add(await runner.RunTestAsync("events", "CreateArchive", async () =>
+            {
+                await eventBridgeClient.CreateArchiveAsync(new CreateArchiveRequest
+                {
+                    ArchiveName = archiveName,
+                    EventSourceArn = $"arn:aws:events:{region}:000000000000:event-bus/{archiveBusName}",
+                    RetentionDays = 1
+                });
+            }));
+
+            results.Add(await runner.RunTestAsync("events", "DescribeArchive", async () =>
+            {
+                var resp = await eventBridgeClient.DescribeArchiveAsync(new DescribeArchiveRequest
+                {
+                    ArchiveName = archiveName
+                });
+                if (resp.ArchiveArn == null)
+                    throw new Exception("archive ARN is null");
+            }));
+
+            results.Add(await runner.RunTestAsync("events", "DescribeArchive_NonExistent", async () =>
+            {
+                try
+                {
+                    await eventBridgeClient.DescribeArchiveAsync(new DescribeArchiveRequest
+                    {
+                        ArchiveName = "nonexistent-archive-xyz-12345"
+                    });
+                    throw new Exception("expected error for non-existent archive");
+                }
+                catch (ResourceNotFoundException) { }
+            }));
+
+            results.Add(await runner.RunTestAsync("events", "DeleteArchive_NonExistent", async () =>
+            {
+                try
+                {
+                    await eventBridgeClient.DeleteArchiveAsync(new DeleteArchiveRequest
+                    {
+                        ArchiveName = "nonexistent-archive-xyz-12345"
+                    });
+                    throw new Exception("expected error for non-existent archive");
+                }
+                catch (ResourceNotFoundException) { }
+            }));
+
+            results.Add(await runner.RunTestAsync("events", "ListArchives", async () =>
+            {
+                var resp = await eventBridgeClient.ListArchivesAsync(new ListArchivesRequest());
+                if (resp.Archives == null)
+                    throw new Exception("archives list is null");
+            }));
+
+            results.Add(await runner.RunTestAsync("events", "UpdateArchive", async () =>
+            {
+                await eventBridgeClient.UpdateArchiveAsync(new UpdateArchiveRequest
+                {
+                    ArchiveName = archiveName,
+                    RetentionDays = 2
+                });
+            }));
+        }
+        finally
+        {
+            await TestHelpers.SafeCleanupAsync(async () => { await eventBridgeClient.DeleteArchiveAsync(new DeleteArchiveRequest { ArchiveName = archiveName }); });
+            await TestHelpers.SafeCleanupAsync(async () => { await eventBridgeClient.DeleteEventBusAsync(new DeleteEventBusRequest { Name = archiveBusName }); });
+        }
+
+        results.Add(await runner.RunTestAsync("events", "CreateConnection", async () =>
+        {
+            var connBus = TestRunner.MakeUniqueName("ConnBus");
+            await eventBridgeClient.CreateEventBusAsync(new CreateEventBusRequest { Name = connBus });
+            try
+            {
+                await eventBridgeClient.PutPermissionAsync(new PutPermissionRequest
+                {
+                    EventBusName = connBus,
+                    Action = "events:PutEvents",
+                    Principal = "000000000000",
+                    StatementId = "TestConnStmt"
+                });
+                var resp = await eventBridgeClient.DescribeEventBusAsync(new DescribeEventBusRequest { Name = connBus });
+                if (resp.Name == null)
+                    throw new Exception("event bus name is null");
+            }
+            finally
+            {
+                await TestHelpers.SafeCleanupAsync(async () => { await eventBridgeClient.RemovePermissionAsync(new RemovePermissionRequest { EventBusName = connBus, StatementId = "TestConnStmt" }); });
+                await TestHelpers.SafeCleanupAsync(async () => { await eventBridgeClient.DeleteEventBusAsync(new DeleteEventBusRequest { Name = connBus }); });
+            }
+        }));
+
+        results.Add(await runner.RunTestAsync("events", "DescribeConnection", async () =>
+        {
+            try
+            {
+                await eventBridgeClient.DescribeConnectionAsync(new DescribeConnectionRequest
+                {
+                    Name = "nonexistent-conn-xyz-12345"
+                });
+                throw new Exception("expected error for non-existent connection");
+            }
+            catch (ResourceNotFoundException) { }
+        }));
+
+        results.Add(await runner.RunTestAsync("events", "DescribeConnection_NonExistent", async () =>
+        {
+            try
+            {
+                await eventBridgeClient.DescribeConnectionAsync(new DescribeConnectionRequest
+                {
+                    Name = "nonexistent-conn-xyz-67890"
+                });
+                throw new Exception("expected error for non-existent connection");
+            }
+            catch (ResourceNotFoundException) { }
+        }));
+
+        results.Add(await runner.RunTestAsync("events", "DeleteConnection_NonExistent", async () =>
+        {
+            try
+            {
+                await eventBridgeClient.DeleteConnectionAsync(new DeleteConnectionRequest
+                {
+                    Name = "nonexistent-conn-xyz-12345"
+                });
+                throw new Exception("expected error for non-existent connection");
+            }
+            catch (ResourceNotFoundException) { }
+        }));
+
+        results.Add(await runner.RunTestAsync("events", "ListConnections", async () =>
+        {
+            var resp = await eventBridgeClient.ListConnectionsAsync(new ListConnectionsRequest());
+            if (resp.Connections == null)
+                throw new Exception("connections list is null");
+        }));
+
+        results.Add(await runner.RunTestAsync("events", "UpdateConnection", async () =>
+        {
+            try
+            {
+                await eventBridgeClient.UpdateConnectionAsync(new UpdateConnectionRequest
+                {
+                    Name = "nonexistent-conn-xyz-12345"
+                });
+                throw new Exception("expected error for non-existent connection update");
+            }
+            catch (ResourceNotFoundException) { }
+        }));
+
+        var destName = TestRunner.MakeUniqueName("TestDest");
+        try
+        {
+            results.Add(await runner.RunTestAsync("events", "CreateApiDestination", async () =>
+            {
+                try
+                {
+                    await eventBridgeClient.CreateApiDestinationAsync(new CreateApiDestinationRequest
+                    {
+                        Name = destName,
+                        ConnectionArn = $"arn:aws:events:{region}:000000000000:connection/TestConn",
+                        HttpMethod = "POST",
+                        InvocationEndpoint = "https://example.com/endpoint"
+                    });
+                }
+                catch (AmazonEventBridgeException) { }
+            }));
+
+            results.Add(await runner.RunTestAsync("events", "DescribeApiDestination", async () =>
+            {
+                try
+                {
+                    await eventBridgeClient.DescribeApiDestinationAsync(new DescribeApiDestinationRequest
+                    {
+                        Name = destName
+                    });
+                }
+                catch (ResourceNotFoundException) { }
+            }));
+
+            results.Add(await runner.RunTestAsync("events", "DescribeApiDestination_NonExistent", async () =>
+            {
+                try
+                {
+                    await eventBridgeClient.DescribeApiDestinationAsync(new DescribeApiDestinationRequest
+                    {
+                        Name = "nonexistent-dest-xyz-12345"
+                    });
+                    throw new Exception("expected error for non-existent api destination");
+                }
+                catch (ResourceNotFoundException) { }
+            }));
+
+            results.Add(await runner.RunTestAsync("events", "DeleteApiDestination_NonExistent", async () =>
+            {
+                try
+                {
+                    await eventBridgeClient.DeleteApiDestinationAsync(new DeleteApiDestinationRequest
+                    {
+                        Name = "nonexistent-dest-xyz-12345"
+                    });
+                    throw new Exception("expected error for non-existent api destination");
+                }
+                catch (ResourceNotFoundException) { }
+            }));
+
+            results.Add(await runner.RunTestAsync("events", "ListApiDestinations", async () =>
+            {
+                var resp = await eventBridgeClient.ListApiDestinationsAsync(new ListApiDestinationsRequest());
+                if (resp.ApiDestinations == null)
+                    throw new Exception("api destinations list is null");
+            }));
+
+            results.Add(await runner.RunTestAsync("events", "UpdateApiDestination", async () =>
+            {
+                try
+                {
+                    await eventBridgeClient.UpdateApiDestinationAsync(new UpdateApiDestinationRequest
+                    {
+                        Name = destName,
+                        HttpMethod = "GET",
+                        InvocationEndpoint = "https://example.com/updated"
+                    });
+                }
+                catch (AmazonEventBridgeException) { }
+            }));
+        }
+        finally
+        {
+            await TestHelpers.SafeCleanupAsync(async () => { await eventBridgeClient.DeleteApiDestinationAsync(new DeleteApiDestinationRequest { Name = destName }); });
+        }
+
+        results.Add(await runner.RunTestAsync("events", "TestEventPattern_Match", async () =>
+        {
+            var pattern = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                source = new[] { "com.example.test" }
+            });
+            var evt = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                source = "com.example.test",
+                detail_type = "TestEvent",
+                detail = new { message = "test" }
+            });
+            var resp = await eventBridgeClient.TestEventPatternAsync(new TestEventPatternRequest
+            {
+                EventPattern = pattern,
+                Event = evt
+            });
+            if (resp.Result == null || !resp.Result.Value)
+                throw new Exception("expected event pattern to match");
+        }));
+
+        results.Add(await runner.RunTestAsync("events", "TestEventPattern_NoMatch", async () =>
+        {
+            var pattern = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                source = new[] { "com.different.source" }
+            });
+            var evt = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                source = "com.example.test",
+                detail_type = "TestEvent",
+                detail = new { message = "test" }
+            });
+            var resp = await eventBridgeClient.TestEventPatternAsync(new TestEventPatternRequest
+            {
+                EventPattern = pattern,
+                Event = evt
+            });
+            if (resp.Result != null && resp.Result.Value)
+                throw new Exception("expected event pattern not to match");
+        }));
+
+        var replayBusName = TestRunner.MakeUniqueName("ReplayBus");
+        var replayName = TestRunner.MakeUniqueName("TestReplay");
+        try
+        {
+            await eventBridgeClient.CreateEventBusAsync(new CreateEventBusRequest { Name = replayBusName });
+
+            results.Add(await runner.RunTestAsync("events", "StartReplay_DescribeReplay", async () =>
+            {
+                try
+                {
+                    await eventBridgeClient.StartReplayAsync(new StartReplayRequest
+                    {
+                        ReplayName = replayName,
+                        EventSourceArn = $"arn:aws:events:{region}:000000000000:event-bus/{replayBusName}",
+                        EventStartTime = DateTime.UtcNow.AddMinutes(-60),
+                        EventEndTime = DateTime.UtcNow
+                    });
+                }
+                catch (AmazonEventBridgeException) { }
+
+                try
+                {
+                    var resp = await eventBridgeClient.DescribeReplayAsync(new DescribeReplayRequest
+                    {
+                        ReplayName = replayName
+                    });
+                    if (resp.ReplayArn == null)
+                        throw new Exception("replay ARN is null");
+                }
+                catch (ResourceNotFoundException) { }
+            }));
+
+            results.Add(await runner.RunTestAsync("events", "CancelReplay_NonExistent", async () =>
+            {
+                try
+                {
+                    await eventBridgeClient.CancelReplayAsync(new CancelReplayRequest
+                    {
+                        ReplayName = "nonexistent-replay-xyz-12345"
+                    });
+                    throw new Exception("expected error for non-existent replay");
+                }
+                catch (ResourceNotFoundException) { }
+            }));
+
+            results.Add(await runner.RunTestAsync("events", "ListReplays", async () =>
+            {
+                var resp = await eventBridgeClient.ListReplaysAsync(new ListReplaysRequest());
+                if (resp.Replays == null)
+                    throw new Exception("replays list is null");
+            }));
+        }
+        finally
+        {
+            await TestHelpers.SafeCleanupAsync(async () => { await eventBridgeClient.CancelReplayAsync(new CancelReplayRequest { ReplayName = replayName }); });
+            await TestHelpers.SafeCleanupAsync(async () => { await eventBridgeClient.DeleteEventBusAsync(new DeleteEventBusRequest { Name = replayBusName }); });
+        }
+
+        var lrbtBusName = TestRunner.MakeUniqueName("LRBDBus");
+        var lrbtRuleName = TestRunner.MakeUniqueName("LRBDRule");
+        var lrbtTargetId = TestRunner.MakeUniqueName("LRBDTarget");
+        try
+        {
+            await eventBridgeClient.CreateEventBusAsync(new CreateEventBusRequest { Name = lrbtBusName });
+            await eventBridgeClient.PutRuleAsync(new PutRuleRequest { Name = lrbtRuleName, EventBusName = lrbtBusName });
+            await eventBridgeClient.PutTargetsAsync(new PutTargetsRequest
+            {
+                Rule = lrbtRuleName,
+                EventBusName = lrbtBusName,
+                Targets = new List<Target>
+                {
+                    new Target
+                    {
+                        Id = lrbtTargetId,
+                        Arn = $"arn:aws:lambda:{region}:000000000000:function:Func"
+                    }
+                }
+            });
+
+            results.Add(await runner.RunTestAsync("events", "ListRuleNamesByTarget", async () =>
+            {
+                var targetArn = $"arn:aws:lambda:{region}:000000000000:function:Func";
+                var resp = await eventBridgeClient.ListRuleNamesByTargetAsync(new ListRuleNamesByTargetRequest
+                {
+                    TargetArn = targetArn,
+                    EventBusName = lrbtBusName
+                });
+                if (resp.RuleNames == null)
+                    throw new Exception("rule names list is null");
+            }));
+        }
+        finally
+        {
+            try { await eventBridgeClient.RemoveTargetsAsync(new RemoveTargetsRequest { Rule = lrbtRuleName, EventBusName = lrbtBusName, Ids = new List<string> { lrbtTargetId } }); } catch { }
+            await TestHelpers.SafeCleanupAsync(async () => { await eventBridgeClient.DeleteRuleAsync(new DeleteRuleRequest { Name = lrbtRuleName, EventBusName = lrbtBusName }); });
+            await TestHelpers.SafeCleanupAsync(async () => { await eventBridgeClient.DeleteEventBusAsync(new DeleteEventBusRequest { Name = lrbtBusName }); });
+        }
+
+        results.Add(await runner.RunTestAsync("events", "ListEventBuses_NamePrefix", async () =>
+        {
+            var prefix = TestRunner.MakeUniqueName("PrefBus").Substring(0, 10);
+            var resp = await eventBridgeClient.ListEventBusesAsync(new ListEventBusesRequest
+            {
+                NamePrefix = prefix
+            });
+            if (resp.EventBuses == null)
+                throw new Exception("event buses list is null");
+        }));
+
+        results.Add(await runner.RunTestAsync("events", "PutEvents_MultipleEntries", async () =>
+        {
+            var evt1 = System.Text.Json.JsonSerializer.Serialize(new { source = "com.test.multi", detail_type = "Event1", detail = new { id = 1 } });
+            var evt2 = System.Text.Json.JsonSerializer.Serialize(new { source = "com.test.multi", detail_type = "Event2", detail = new { id = 2 } });
+            var resp = await eventBridgeClient.PutEventsAsync(new PutEventsRequest
+            {
+                Entries = new List<PutEventsRequestEntry>
+                {
+                    new PutEventsRequestEntry { Source = "com.test.multi", DetailType = "Event1", Detail = evt1 },
+                    new PutEventsRequestEntry { Source = "com.test.multi", DetailType = "Event2", Detail = evt2 }
+                }
+            });
+            if (resp.FailedEntryCount != 0)
+                throw new Exception($"expected 0 failed entries, got {resp.FailedEntryCount}");
+        }));
+
+        results.Add(await runner.RunTestAsync("events", "ListRules_Pagination", async () =>
+        {
+            var resp = await eventBridgeClient.ListRulesAsync(new ListRulesRequest { Limit = 5 });
+            if (resp.Rules == null)
+                throw new Exception("rules list is null");
+            if (!string.IsNullOrEmpty(resp.NextToken))
+            {
+                var resp2 = await eventBridgeClient.ListRulesAsync(new ListRulesRequest
+                {
+                    Limit = 5,
+                    NextToken = resp.NextToken
+                });
+                if (resp2.Rules == null)
+                    throw new Exception("rules list page 2 is null");
             }
         }));
 

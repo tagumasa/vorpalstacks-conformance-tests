@@ -21,31 +21,21 @@ public static class LambdaServiceTests
         {
             0x50, 0x4b, 0x03, 0x04, 0x14, 0x00, 0x00, 0x00, 0x08, 0x00
         });
-        var trustPolicy = @"{
-            ""Version"": ""2012-10-17"",
-            ""Statement"": [
-                {
-                    ""Effect"": ""Allow"",
-                    ""Principal"": { ""Service"": ""lambda.amazonaws.com"" },
-                    ""Action"": ""sts:AssumeRole""
-                }
-            ]
-        }";
+        var trustPolicy = IamHelpers.LambdaTrustPolicy;
 
         var roleArn = $"arn:aws:iam::000000000000:role/{roleName}";
         var functionARN = $"arn:aws:lambda:{region}:000000000000:function:{functionName}";
 
         try
         {
-            try
+            await TestHelpers.SafeCleanupAsync(async () =>
             {
                 await iamClient.CreateRoleAsync(new CreateRoleRequest
                 {
                     RoleName = roleName,
                     AssumeRolePolicyDocument = trustPolicy
                 });
-            }
-            catch { }
+            });
 
             results.Add(await runner.RunTestAsync("lambda", "CreateFunction", async () =>
             {
@@ -297,8 +287,8 @@ public static class LambdaServiceTests
         }
         finally
         {
-            try { await lambdaClient.DeleteFunctionAsync(new DeleteFunctionRequest { FunctionName = functionName }); } catch { }
-            try { await iamClient.DeleteRoleAsync(new DeleteRoleRequest { RoleName = roleName }); } catch { }
+            await TestHelpers.SafeCleanupAsync(async () => { await lambdaClient.DeleteFunctionAsync(new DeleteFunctionRequest { FunctionName = functionName }); });
+            await TestHelpers.SafeCleanupAsync(async () => { await iamClient.DeleteRoleAsync(new DeleteRoleRequest { RoleName = roleName }); });
         }
 
         results.Add(await runner.RunTestAsync("lambda", "GetFunction_NonExistent", async () =>
@@ -394,8 +384,8 @@ public static class LambdaServiceTests
             }
             finally
             {
-                try { await lambdaClient.DeleteFunctionAsync(new DeleteFunctionRequest { FunctionName = dupName }); } catch { }
-                try { await iamClient.DeleteRoleAsync(new DeleteRoleRequest { RoleName = dupRoleName }); } catch { }
+                await TestHelpers.SafeCleanupAsync(async () => { await lambdaClient.DeleteFunctionAsync(new DeleteFunctionRequest { FunctionName = dupName }); });
+                await TestHelpers.SafeCleanupAsync(async () => { await iamClient.DeleteRoleAsync(new DeleteRoleRequest { RoleName = dupRoleName }); });
             }
         }));
 
@@ -435,8 +425,8 @@ public static class LambdaServiceTests
             }
             finally
             {
-                try { await lambdaClient.DeleteFunctionAsync(new DeleteFunctionRequest { FunctionName = invFunc }); } catch { }
-                try { await iamClient.DeleteRoleAsync(new DeleteRoleRequest { RoleName = invRoleName }); } catch { }
+                await TestHelpers.SafeCleanupAsync(async () => { await lambdaClient.DeleteFunctionAsync(new DeleteFunctionRequest { FunctionName = invFunc }); });
+                await TestHelpers.SafeCleanupAsync(async () => { await iamClient.DeleteRoleAsync(new DeleteRoleRequest { RoleName = invRoleName }); });
             }
         }));
 
@@ -485,8 +475,8 @@ public static class LambdaServiceTests
             }
             finally
             {
-                try { await lambdaClient.DeleteFunctionAsync(new DeleteFunctionRequest { FunctionName = gfcFunc }); } catch { }
-                try { await iamClient.DeleteRoleAsync(new DeleteRoleRequest { RoleName = gfcRoleName }); } catch { }
+                await TestHelpers.SafeCleanupAsync(async () => { await lambdaClient.DeleteFunctionAsync(new DeleteFunctionRequest { FunctionName = gfcFunc }); });
+                await TestHelpers.SafeCleanupAsync(async () => { await iamClient.DeleteRoleAsync(new DeleteRoleRequest { RoleName = gfcRoleName }); });
             }
         }));
 
@@ -525,8 +515,8 @@ public static class LambdaServiceTests
             }
             finally
             {
-                try { await lambdaClient.DeleteFunctionAsync(new DeleteFunctionRequest { FunctionName = pvFunc }); } catch { }
-                try { await iamClient.DeleteRoleAsync(new DeleteRoleRequest { RoleName = pvRoleName }); } catch { }
+                await TestHelpers.SafeCleanupAsync(async () => { await lambdaClient.DeleteFunctionAsync(new DeleteFunctionRequest { FunctionName = pvFunc }); });
+                await TestHelpers.SafeCleanupAsync(async () => { await iamClient.DeleteRoleAsync(new DeleteRoleRequest { RoleName = pvRoleName }); });
             }
         }));
 
@@ -561,8 +551,8 @@ public static class LambdaServiceTests
             }
             finally
             {
-                try { await lambdaClient.DeleteFunctionAsync(new DeleteFunctionRequest { FunctionName = lfFunc }); } catch { }
-                try { await iamClient.DeleteRoleAsync(new DeleteRoleRequest { RoleName = lfRoleName }); } catch { }
+                await TestHelpers.SafeCleanupAsync(async () => { await lambdaClient.DeleteFunctionAsync(new DeleteFunctionRequest { FunctionName = lfFunc }); });
+                await TestHelpers.SafeCleanupAsync(async () => { await iamClient.DeleteRoleAsync(new DeleteRoleRequest { RoleName = lfRoleName }); });
             }
         }));
 
@@ -610,8 +600,8 @@ public static class LambdaServiceTests
             }
             finally
             {
-                try { await lambdaClient.DeleteFunctionAsync(new DeleteFunctionRequest { FunctionName = caFunc }); } catch { }
-                try { await iamClient.DeleteRoleAsync(new DeleteRoleRequest { RoleName = caRoleName }); } catch { }
+                await TestHelpers.SafeCleanupAsync(async () => { await lambdaClient.DeleteFunctionAsync(new DeleteFunctionRequest { FunctionName = caFunc }); });
+                await TestHelpers.SafeCleanupAsync(async () => { await iamClient.DeleteRoleAsync(new DeleteRoleRequest { RoleName = caRoleName }); });
             }
         }));
 
@@ -661,8 +651,698 @@ public static class LambdaServiceTests
             }
             finally
             {
-                try { await lambdaClient.DeleteFunctionAsync(new DeleteFunctionRequest { FunctionName = ucFunc }); } catch { }
-                try { await iamClient.DeleteRoleAsync(new DeleteRoleRequest { RoleName = ucRoleName }); } catch { }
+                await TestHelpers.SafeCleanupAsync(async () => { await lambdaClient.DeleteFunctionAsync(new DeleteFunctionRequest { FunctionName = ucFunc }); });
+                await TestHelpers.SafeCleanupAsync(async () => { await iamClient.DeleteRoleAsync(new DeleteRoleRequest { RoleName = ucRoleName }); });
+            }
+        }));
+
+        // === GROUP A: LAYER OPERATIONS ===
+
+        var layerName = TestRunner.MakeUniqueName("CSLayer");
+
+        results.Add(await runner.RunTestAsync("lambda", "PublishLayerVersion", async () =>
+        {
+            var resp = await lambdaClient.PublishLayerVersionAsync(new PublishLayerVersionRequest
+            {
+                LayerName = layerName,
+                Content = new LayerVersionContentInput
+                {
+                    ZipFile = new MemoryStream(functionCode.ToArray())
+                },
+                Description = "Test layer version",
+                CompatibleRuntimes = new List<string> { "nodejs20.x" }
+            });
+            if (string.IsNullOrEmpty(resp.LayerArn))
+                throw new Exception("LayerArn is null");
+            if (resp.Version != 1)
+                throw new Exception($"expected version 1, got {resp.Version}");
+            if (resp.Content == null || string.IsNullOrEmpty(resp.Content.CodeSha256))
+                throw new Exception("CodeSha256 is nil");
+        }));
+
+        results.Add(await runner.RunTestAsync("lambda", "GetLayerVersion", async () =>
+        {
+            var resp = await lambdaClient.GetLayerVersionAsync(new GetLayerVersionRequest
+            {
+                LayerName = layerName,
+                VersionNumber = 1
+            });
+            if (resp.Content == null || string.IsNullOrEmpty(resp.Content.CodeSha256))
+                throw new Exception("CodeSha256 is nil");
+            if (resp.Version != 1)
+                throw new Exception($"expected version 1, got {resp.Version}");
+        }));
+
+        results.Add(await runner.RunTestAsync("lambda", "ListLayers", async () =>
+        {
+            var resp = await lambdaClient.ListLayersAsync(new ListLayersRequest());
+            if (resp.Layers == null)
+                throw new Exception("layers list is nil");
+            var found = resp.Layers.Any(l => l.LayerName == layerName);
+            if (!found)
+                throw new Exception($"layer {layerName} not found in ListLayers");
+        }));
+
+        results.Add(await runner.RunTestAsync("lambda", "ListLayerVersions", async () =>
+        {
+            var resp = await lambdaClient.ListLayerVersionsAsync(new ListLayerVersionsRequest
+            {
+                LayerName = layerName
+            });
+            if (resp.LayerVersions == null)
+                throw new Exception("layer versions list is nil");
+            if (resp.LayerVersions.Count == 0)
+                throw new Exception("expected at least 1 layer version");
+        }));
+
+        results.Add(await runner.RunTestAsync("lambda", "DeleteLayerVersion", async () =>
+        {
+            await lambdaClient.DeleteLayerVersionAsync(new DeleteLayerVersionRequest
+            {
+                LayerName = layerName,
+                VersionNumber = 1
+            });
+        }));
+
+        // === GROUP B: EVENT SOURCE MAPPING ===
+
+        var esmFuncName = TestRunner.MakeUniqueName("EsmFunc");
+        var esmRoleName = TestRunner.MakeUniqueName("EsmRole");
+        var esmRole = $"arn:aws:iam::000000000000:role/{esmRoleName}";
+        var esmEventSourceArn = "arn:aws:sqs:us-east-1:000000000000:test-queue";
+        string? esmUUID = null;
+
+        try
+        {
+            try
+            {
+                await iamClient.CreateRoleAsync(new CreateRoleRequest
+                {
+                    RoleName = esmRoleName,
+                    AssumeRolePolicyDocument = trustPolicy
+                });
+            }
+            catch { }
+            try
+            {
+                await lambdaClient.CreateFunctionAsync(new CreateFunctionRequest
+                {
+                    FunctionName = esmFuncName,
+                    Runtime = Runtime.Nodejs20X,
+                    Role = esmRole,
+                    Handler = "index.handler",
+                    Code = new FunctionCode { ZipFile = new MemoryStream(functionCode.ToArray()) }
+                });
+
+                results.Add(await runner.RunTestAsync("lambda", "CreateEventSourceMapping", async () =>
+                {
+                    var resp = await lambdaClient.CreateEventSourceMappingAsync(new CreateEventSourceMappingRequest
+                    {
+                        FunctionName = esmFuncName,
+                        EventSourceArn = esmEventSourceArn,
+                        BatchSize = 10,
+                        Enabled = true
+                    });
+                    if (string.IsNullOrEmpty(resp.UUID))
+                        throw new Exception("UUID is nil or empty");
+                    esmUUID = resp.UUID;
+                }));
+
+                results.Add(await runner.RunTestAsync("lambda", "GetEventSourceMapping", async () =>
+                {
+                    if (esmUUID == null)
+                        throw new Exception("no UUID from CreateEventSourceMapping");
+                    var resp = await lambdaClient.GetEventSourceMappingAsync(new GetEventSourceMappingRequest
+                    {
+                        UUID = esmUUID
+                    });
+                    if (string.IsNullOrEmpty(resp.FunctionArn))
+                        throw new Exception("FunctionArn is nil");
+                    if (resp.EventSourceArn != esmEventSourceArn)
+                        throw new Exception($"EventSourceArn mismatch, got {resp.EventSourceArn}");
+                }));
+
+                results.Add(await runner.RunTestAsync("lambda", "UpdateEventSourceMapping", async () =>
+                {
+                    if (esmUUID == null)
+                        throw new Exception("no UUID from CreateEventSourceMapping");
+                    var resp = await lambdaClient.UpdateEventSourceMappingAsync(new UpdateEventSourceMappingRequest
+                    {
+                        UUID = esmUUID,
+                        BatchSize = 50,
+                        Enabled = false
+                    });
+                    if (resp.BatchSize != 50)
+                        throw new Exception($"BatchSize not updated, got {resp.BatchSize}");
+                }));
+
+                results.Add(await runner.RunTestAsync("lambda", "ListEventSourceMappings", async () =>
+                {
+                    var resp = await lambdaClient.ListEventSourceMappingsAsync(new ListEventSourceMappingsRequest
+                    {
+                        FunctionName = esmFuncName
+                    });
+                    if (resp.EventSourceMappings == null)
+                        throw new Exception("event source mappings list is nil");
+                    if (resp.EventSourceMappings.Count == 0)
+                        throw new Exception("expected at least 1 event source mapping");
+                }));
+
+                results.Add(await runner.RunTestAsync("lambda", "DeleteEventSourceMapping", async () =>
+                {
+                    if (esmUUID == null)
+                        throw new Exception("no UUID from CreateEventSourceMapping");
+                    await lambdaClient.DeleteEventSourceMappingAsync(new DeleteEventSourceMappingRequest
+                    {
+                        UUID = esmUUID
+                    });
+                }));
+            }
+            finally
+            {
+                await TestHelpers.SafeCleanupAsync(async () => { await lambdaClient.DeleteFunctionAsync(new DeleteFunctionRequest { FunctionName = esmFuncName }); });
+                await TestHelpers.SafeCleanupAsync(async () => { await iamClient.DeleteRoleAsync(new DeleteRoleRequest { RoleName = esmRoleName }); });
+            }
+        }
+        catch { }
+
+        results.Add(await runner.RunTestAsync("lambda", "GetEventSourceMapping_NonExistent", async () =>
+        {
+            try
+            {
+                await lambdaClient.GetEventSourceMappingAsync(new GetEventSourceMappingRequest
+                {
+                    UUID = "00000000-0000-0000-0000-000000000000"
+                });
+                throw new Exception("Expected error for non-existent event source mapping");
+            }
+            catch (AmazonLambdaException) { }
+        }));
+
+        // === GROUP C: PROVISIONED CONCURRENCY ===
+
+        var pcFuncName = TestRunner.MakeUniqueName("PcFunc");
+        var pcRoleName = TestRunner.MakeUniqueName("PcRole");
+        var pcRole = $"arn:aws:iam::000000000000:role/{pcRoleName}";
+        string? pcVersion = null;
+
+        try
+        {
+            try
+            {
+                await iamClient.CreateRoleAsync(new CreateRoleRequest
+                {
+                    RoleName = pcRoleName,
+                    AssumeRolePolicyDocument = trustPolicy
+                });
+            }
+            catch { }
+            try
+            {
+                await lambdaClient.CreateFunctionAsync(new CreateFunctionRequest
+                {
+                    FunctionName = pcFuncName,
+                    Runtime = Runtime.Nodejs20X,
+                    Role = pcRole,
+                    Handler = "index.handler",
+                    Code = new FunctionCode { ZipFile = new MemoryStream(functionCode.ToArray()) }
+                });
+
+                var publishResp = await lambdaClient.PublishVersionAsync(new PublishVersionRequest
+                {
+                    FunctionName = pcFuncName
+                });
+                pcVersion = publishResp.Version;
+
+                results.Add(await runner.RunTestAsync("lambda", "PutProvisionedConcurrencyConfig", async () =>
+                {
+                    var resp = await lambdaClient.PutProvisionedConcurrencyConfigAsync(new PutProvisionedConcurrencyConfigRequest
+                    {
+                        FunctionName = pcFuncName,
+                        Qualifier = pcVersion,
+                        ProvisionedConcurrentExecutions = 5
+                    });
+                    if (resp.AllocatedProvisionedConcurrentExecutions == null)
+                        throw new Exception("AllocatedProvisionedConcurrentExecutions is nil");
+                }));
+
+                results.Add(await runner.RunTestAsync("lambda", "GetProvisionedConcurrencyConfig", async () =>
+                {
+                    var resp = await lambdaClient.GetProvisionedConcurrencyConfigAsync(new GetProvisionedConcurrencyConfigRequest
+                    {
+                        FunctionName = pcFuncName,
+                        Qualifier = pcVersion
+                    });
+                    if (string.IsNullOrEmpty(resp.Status))
+                        throw new Exception("Status is empty");
+                }));
+
+                results.Add(await runner.RunTestAsync("lambda", "ListProvisionedConcurrencyConfigs", async () =>
+                {
+                    var resp = await lambdaClient.ListProvisionedConcurrencyConfigsAsync(new ListProvisionedConcurrencyConfigsRequest
+                    {
+                        FunctionName = pcFuncName
+                    });
+                    if (resp.ProvisionedConcurrencyConfigs == null)
+                        throw new Exception("configs list is nil");
+                    if (resp.ProvisionedConcurrencyConfigs.Count == 0)
+                        throw new Exception("expected at least 1 config");
+                }));
+
+                results.Add(await runner.RunTestAsync("lambda", "DeleteProvisionedConcurrencyConfig", async () =>
+                {
+                    await lambdaClient.DeleteProvisionedConcurrencyConfigAsync(new DeleteProvisionedConcurrencyConfigRequest
+                    {
+                        FunctionName = pcFuncName,
+                        Qualifier = pcVersion
+                    });
+                }));
+
+                results.Add(await runner.RunTestAsync("lambda", "GetProvisionedConcurrencyConfig_NonExistent", async () =>
+                {
+                    try
+                    {
+                        await lambdaClient.GetProvisionedConcurrencyConfigAsync(new GetProvisionedConcurrencyConfigRequest
+                        {
+                            FunctionName = pcFuncName,
+                            Qualifier = pcVersion
+                        });
+                        throw new Exception("Expected error for deleted provisioned concurrency config");
+                    }
+                    catch (AmazonLambdaException) { }
+                }));
+            }
+            finally
+            {
+                await TestHelpers.SafeCleanupAsync(async () => { await lambdaClient.DeleteFunctionAsync(new DeleteFunctionRequest { FunctionName = pcFuncName }); });
+                await TestHelpers.SafeCleanupAsync(async () => { await iamClient.DeleteRoleAsync(new DeleteRoleRequest { RoleName = pcRoleName }); });
+            }
+        }
+        catch { }
+
+        // === GROUP D: FUNCTION EVENT INVOKE CONFIG ===
+
+        var eicFuncName = TestRunner.MakeUniqueName("EicFunc");
+        var eicRoleName = TestRunner.MakeUniqueName("EicRole");
+        var eicRole = $"arn:aws:iam::000000000000:role/{eicRoleName}";
+
+        try
+        {
+            try
+            {
+                await iamClient.CreateRoleAsync(new CreateRoleRequest
+                {
+                    RoleName = eicRoleName,
+                    AssumeRolePolicyDocument = trustPolicy
+                });
+            }
+            catch { }
+            try
+            {
+                await lambdaClient.CreateFunctionAsync(new CreateFunctionRequest
+                {
+                    FunctionName = eicFuncName,
+                    Runtime = Runtime.Nodejs20X,
+                    Role = eicRole,
+                    Handler = "index.handler",
+                    Code = new FunctionCode { ZipFile = new MemoryStream(functionCode.ToArray()) }
+                });
+
+                results.Add(await runner.RunTestAsync("lambda", "PutFunctionEventInvokeConfig", async () =>
+                {
+                    var resp = await lambdaClient.PutFunctionEventInvokeConfigAsync(new PutFunctionEventInvokeConfigRequest
+                    {
+                        FunctionName = eicFuncName,
+                        MaximumEventAgeInSeconds = 3600,
+                        MaximumRetryAttempts = 2
+                    });
+                    if (resp.LastModified == null)
+                        throw new Exception("LastModified is nil");
+                }));
+
+                results.Add(await runner.RunTestAsync("lambda", "GetFunctionEventInvokeConfig", async () =>
+                {
+                    var resp = await lambdaClient.GetFunctionEventInvokeConfigAsync(new GetFunctionEventInvokeConfigRequest
+                    {
+                        FunctionName = eicFuncName
+                    });
+                    if (resp.MaximumEventAgeInSeconds != 3600)
+                        throw new Exception($"MaximumEventAgeInSeconds mismatch, got {resp.MaximumEventAgeInSeconds}");
+                    if (resp.MaximumRetryAttempts != 2)
+                        throw new Exception($"MaximumRetryAttempts mismatch, got {resp.MaximumRetryAttempts}");
+                }));
+
+                results.Add(await runner.RunTestAsync("lambda", "ListFunctionEventInvokeConfigs", async () =>
+                {
+                    var resp = await lambdaClient.ListFunctionEventInvokeConfigsAsync(new ListFunctionEventInvokeConfigsRequest
+                    {
+                        FunctionName = eicFuncName
+                    });
+                    if (resp.FunctionEventInvokeConfigs == null)
+                        throw new Exception("configs list is nil");
+                    if (resp.FunctionEventInvokeConfigs.Count == 0)
+                        throw new Exception("expected at least 1 config");
+                }));
+
+                results.Add(await runner.RunTestAsync("lambda", "DeleteFunctionEventInvokeConfig", async () =>
+                {
+                    await lambdaClient.DeleteFunctionEventInvokeConfigAsync(new DeleteFunctionEventInvokeConfigRequest
+                    {
+                        FunctionName = eicFuncName
+                    });
+                }));
+            }
+            finally
+            {
+                await TestHelpers.SafeCleanupAsync(async () => { await lambdaClient.DeleteFunctionAsync(new DeleteFunctionRequest { FunctionName = eicFuncName }); });
+                await TestHelpers.SafeCleanupAsync(async () => { await iamClient.DeleteRoleAsync(new DeleteRoleRequest { RoleName = eicRoleName }); });
+            }
+        }
+        catch { }
+
+        // === GROUP E: FUNCTION URL CONFIG ===
+
+        var furlFuncName = TestRunner.MakeUniqueName("FurlFunc");
+        var furlRoleName = TestRunner.MakeUniqueName("FurlRole");
+        var furlRole = $"arn:aws:iam::000000000000:role/{furlRoleName}";
+
+        try
+        {
+            try
+            {
+                await iamClient.CreateRoleAsync(new CreateRoleRequest
+                {
+                    RoleName = furlRoleName,
+                    AssumeRolePolicyDocument = trustPolicy
+                });
+            }
+            catch { }
+            try
+            {
+                await lambdaClient.CreateFunctionAsync(new CreateFunctionRequest
+                {
+                    FunctionName = furlFuncName,
+                    Runtime = Runtime.Nodejs20X,
+                    Role = furlRole,
+                    Handler = "index.handler",
+                    Code = new FunctionCode { ZipFile = new MemoryStream(functionCode.ToArray()) }
+                });
+
+                results.Add(await runner.RunTestAsync("lambda", "CreateFunctionUrlConfig", async () =>
+                {
+                    var resp = await lambdaClient.CreateFunctionUrlConfigAsync(new CreateFunctionUrlConfigRequest
+                    {
+                        FunctionName = furlFuncName,
+                        AuthType = FunctionUrlAuthType.NONE
+                    });
+                    if (string.IsNullOrEmpty(resp.FunctionUrl))
+                        throw new Exception("FunctionUrl is nil or empty");
+                    if (resp.AuthType != FunctionUrlAuthType.NONE)
+                        throw new Exception($"AuthType mismatch, got {resp.AuthType}");
+                }));
+
+                results.Add(await runner.RunTestAsync("lambda", "GetFunctionUrlConfig", async () =>
+                {
+                    var resp = await lambdaClient.GetFunctionUrlConfigAsync(new GetFunctionUrlConfigRequest
+                    {
+                        FunctionName = furlFuncName
+                    });
+                    if (string.IsNullOrEmpty(resp.FunctionUrl))
+                        throw new Exception("FunctionUrl is nil or empty");
+                }));
+
+                results.Add(await runner.RunTestAsync("lambda", "UpdateFunctionUrlConfig", async () =>
+                {
+                    var resp = await lambdaClient.UpdateFunctionUrlConfigAsync(new UpdateFunctionUrlConfigRequest
+                    {
+                        FunctionName = furlFuncName,
+                        AuthType = FunctionUrlAuthType.AWS_IAM
+                    });
+                    if (resp.AuthType != FunctionUrlAuthType.AWS_IAM)
+                        throw new Exception($"AuthType not updated, got {resp.AuthType}");
+                }));
+
+                results.Add(await runner.RunTestAsync("lambda", "ListFunctionUrlConfigs", async () =>
+                {
+                    var resp = await lambdaClient.ListFunctionUrlConfigsAsync(new ListFunctionUrlConfigsRequest
+                    {
+                        FunctionName = furlFuncName
+                    });
+                    if (resp.FunctionUrlConfigs == null)
+                        throw new Exception("url configs list is nil");
+                    if (resp.FunctionUrlConfigs.Count == 0)
+                        throw new Exception("expected at least 1 url config");
+                }));
+
+                results.Add(await runner.RunTestAsync("lambda", "DeleteFunctionUrlConfig", async () =>
+                {
+                    await lambdaClient.DeleteFunctionUrlConfigAsync(new DeleteFunctionUrlConfigRequest
+                    {
+                        FunctionName = furlFuncName
+                    });
+                }));
+            }
+            finally
+            {
+                await TestHelpers.SafeCleanupAsync(async () => { await lambdaClient.DeleteFunctionAsync(new DeleteFunctionRequest { FunctionName = furlFuncName }); });
+                await TestHelpers.SafeCleanupAsync(async () => { await iamClient.DeleteRoleAsync(new DeleteRoleRequest { RoleName = furlRoleName }); });
+            }
+        }
+        catch { }
+
+        // === GROUP F: INVOKE ASYNC & RESPONSE STREAM ===
+
+        var iaFuncName = TestRunner.MakeUniqueName("IaFunc");
+        var iaRoleName = TestRunner.MakeUniqueName("IaRole");
+        var iaRole = $"arn:aws:iam::000000000000:role/{iaRoleName}";
+        var iaCode = System.Text.Encoding.UTF8.GetBytes("exports.handler = async () => { return { statusCode: 200 }; };");
+
+        try
+        {
+            try
+            {
+                await iamClient.CreateRoleAsync(new CreateRoleRequest
+                {
+                    RoleName = iaRoleName,
+                    AssumeRolePolicyDocument = trustPolicy
+                });
+            }
+            catch { }
+            try
+            {
+                await lambdaClient.CreateFunctionAsync(new CreateFunctionRequest
+                {
+                    FunctionName = iaFuncName,
+                    Runtime = Runtime.Nodejs20X,
+                    Role = iaRole,
+                    Handler = "index.handler",
+                    Code = new FunctionCode { ZipFile = new MemoryStream(iaCode) }
+                });
+
+                results.Add(await runner.RunTestAsync("lambda", "InvokeAsync", async () =>
+                {
+                    var resp = await lambdaClient.InvokeAsync(new InvokeRequest
+                    {
+                        FunctionName = iaFuncName,
+                        InvocationType = InvocationType.Event,
+                        PayloadStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes("{\"test\": true}"))
+                    });
+                    if (resp.StatusCode != 202)
+                        throw new Exception($"expected status 202, got {resp.StatusCode}");
+                }));
+
+                results.Add(await runner.RunTestAsync("lambda", "InvokeWithResponseStream", async () =>
+                {
+                    var resp = await lambdaClient.InvokeWithResponseStreamAsync(new InvokeWithResponseStreamRequest
+                    {
+                        FunctionName = iaFuncName
+                    });
+                    if (resp.StatusCode != 200)
+                        throw new Exception($"expected status 200, got {resp.StatusCode}");
+                    if (string.IsNullOrEmpty(resp.ResponseStreamContentType))
+                        throw new Exception("ResponseStreamContentType is nil");
+                }));
+            }
+            finally
+            {
+                await TestHelpers.SafeCleanupAsync(async () => { await lambdaClient.DeleteFunctionAsync(new DeleteFunctionRequest { FunctionName = iaFuncName }); });
+                await TestHelpers.SafeCleanupAsync(async () => { await iamClient.DeleteRoleAsync(new DeleteRoleRequest { RoleName = iaRoleName }); });
+            }
+        }
+        catch { }
+
+        // === GROUP G: ERROR CASES ===
+
+        results.Add(await runner.RunTestAsync("lambda", "CreateFunction_InvalidRuntime", async () =>
+        {
+            var invRtFuncName = TestRunner.MakeUniqueName("InvRtFunc");
+            var invRtRoleName = TestRunner.MakeUniqueName("InvRtRole");
+            var invRtRole = $"arn:aws:iam::000000000000:role/{invRtRoleName}";
+            try
+            {
+                await iamClient.CreateRoleAsync(new CreateRoleRequest
+                {
+                    RoleName = invRtRoleName,
+                    AssumeRolePolicyDocument = trustPolicy
+                });
+            }
+            catch { }
+            try
+            {
+                try
+                {
+                    await lambdaClient.CreateFunctionAsync(new CreateFunctionRequest
+                    {
+                        FunctionName = invRtFuncName,
+                        Runtime = Runtime.FindValue("invalid_runtime_99"),
+                        Role = invRtRole,
+                        Handler = "index.handler",
+                        Code = new FunctionCode { ZipFile = new MemoryStream(functionCode.ToArray()) }
+                    });
+                    throw new Exception("Expected error for invalid runtime");
+                }
+                catch (InvalidParameterValueException) { }
+            }
+            finally
+            {
+                await TestHelpers.SafeCleanupAsync(async () => { await lambdaClient.DeleteFunctionAsync(new DeleteFunctionRequest { FunctionName = invRtFuncName }); });
+                await TestHelpers.SafeCleanupAsync(async () => { await iamClient.DeleteRoleAsync(new DeleteRoleRequest { RoleName = invRtRoleName }); });
+            }
+        }));
+
+        results.Add(await runner.RunTestAsync("lambda", "GetAlias_NonExistent", async () =>
+        {
+            try
+            {
+                await lambdaClient.GetAliasAsync(new GetAliasRequest
+                {
+                    FunctionName = functionName,
+                    Name = "nonexistent-alias-xyz"
+                });
+                throw new Exception("Expected error for non-existent alias");
+            }
+            catch (AmazonLambdaException) { }
+        }));
+
+        results.Add(await runner.RunTestAsync("lambda", "GetLayerVersion_NonExistent", async () =>
+        {
+            try
+            {
+                await lambdaClient.GetLayerVersionAsync(new GetLayerVersionRequest
+                {
+                    LayerName = "nonexistent-layer-xyz",
+                    VersionNumber = 999
+                });
+                throw new Exception("Expected error for non-existent layer version");
+            }
+            catch (AmazonLambdaException) { }
+        }));
+
+        results.Add(await runner.RunTestAsync("lambda", "GetFunctionUrlConfig_NoConfig", async () =>
+        {
+            var nofcFuncName = TestRunner.MakeUniqueName("NofcFunc");
+            var nofcRoleName = TestRunner.MakeUniqueName("NofcRole");
+            var nofcRole = $"arn:aws:iam::000000000000:role/{nofcRoleName}";
+            try
+            {
+                await iamClient.CreateRoleAsync(new CreateRoleRequest
+                {
+                    RoleName = nofcRoleName,
+                    AssumeRolePolicyDocument = trustPolicy
+                });
+            }
+            catch { }
+            try
+            {
+                await lambdaClient.CreateFunctionAsync(new CreateFunctionRequest
+                {
+                    FunctionName = nofcFuncName,
+                    Runtime = Runtime.Nodejs20X,
+                    Role = nofcRole,
+                    Handler = "index.handler",
+                    Code = new FunctionCode { ZipFile = new MemoryStream(functionCode.ToArray()) }
+                });
+                try
+                {
+                    await lambdaClient.GetFunctionUrlConfigAsync(new GetFunctionUrlConfigRequest
+                    {
+                        FunctionName = nofcFuncName
+                    });
+                    throw new Exception("Expected error when no URL config set");
+                }
+                catch (AmazonLambdaException) { }
+            }
+            finally
+            {
+                await TestHelpers.SafeCleanupAsync(async () => { await lambdaClient.DeleteFunctionAsync(new DeleteFunctionRequest { FunctionName = nofcFuncName }); });
+                await TestHelpers.SafeCleanupAsync(async () => { await iamClient.DeleteRoleAsync(new DeleteRoleRequest { RoleName = nofcRoleName }); });
+            }
+        }));
+
+        results.Add(await runner.RunTestAsync("lambda", "PutFunctionEventInvokeConfig_NonExistent", async () =>
+        {
+            try
+            {
+                await lambdaClient.PutFunctionEventInvokeConfigAsync(new PutFunctionEventInvokeConfigRequest
+                {
+                    FunctionName = "nonexistent-func-xyz-123",
+                    MaximumEventAgeInSeconds = 3600
+                });
+                throw new Exception("Expected error for non-existent function");
+            }
+            catch (AmazonLambdaException) { }
+        }));
+
+        // === PAGINATION TESTS ===
+
+        results.Add(await runner.RunTestAsync("lambda", "ListFunctions_Pagination", async () =>
+        {
+            var pgTs = DateTime.UtcNow.Ticks.ToString();
+            var pgFuncs = new List<string>();
+            for (int i = 0; i < 5; i++)
+            {
+                var name = $"PagFunc-{pgTs}-{i}";
+                await lambdaClient.CreateFunctionAsync(new CreateFunctionRequest
+                {
+                    FunctionName = name,
+                    Runtime = Runtime.Nodejs20X,
+                    Role = roleArn,
+                    Handler = "index.handler",
+                    Code = new FunctionCode { ZipFile = new MemoryStream(functionCode.ToArray()) }
+                });
+                pgFuncs.Add(name);
+            }
+
+            try
+            {
+                var allFuncs = new List<string>();
+                string? marker = null;
+                while (true)
+                {
+                    var req = new ListFunctionsRequest { MaxItems = 2 };
+                    if (marker != null)
+                        req.Marker = marker;
+                    var resp = await lambdaClient.ListFunctionsAsync(req);
+                    foreach (var f in resp.Functions)
+                    {
+                        if (f.FunctionName != null && f.FunctionName.StartsWith($"PagFunc-{pgTs}"))
+                            allFuncs.Add(f.FunctionName);
+                    }
+                    if (!string.IsNullOrEmpty(resp.NextMarker))
+                        marker = resp.NextMarker;
+                    else
+                        break;
+                }
+
+                if (allFuncs.Count != 5)
+                    throw new Exception($"expected 5 paginated functions, got {allFuncs.Count}");
+            }
+            finally
+            {
+                foreach (var name in pgFuncs)
+                {
+                    await TestHelpers.SafeCleanupAsync(async () => { await lambdaClient.DeleteFunctionAsync(new DeleteFunctionRequest { FunctionName = name }); });
+                }
             }
         }));
 

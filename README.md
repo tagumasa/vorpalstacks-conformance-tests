@@ -8,10 +8,10 @@ Conformance tests for the [VorpalStacks](https://github.com/tagumasa/vorpalstack
 
 | Language | SDK | Tests | Status |
 |----------|-----|-------|--------|
-| Go | aws-sdk-go-v2 | 595 | Baseline (source of truth) |
+| Go | aws-sdk-go-v2 | 2003 | Baseline (source of truth) |
 | Python | boto3 | 631 | |
 | TypeScript | @aws-sdk/client-* | 629 | |
-| C# | AWSSDK.* v4 | 606 | |
+| C# | AWSSDK.* v4 | 2019 | |
 
 ### IaC Tests (`iactests/`)
 

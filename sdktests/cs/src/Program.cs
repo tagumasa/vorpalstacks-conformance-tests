@@ -243,5 +243,52 @@ if (service == "all" || service == "timestream")
     results.AddRange(await TimestreamServiceTests.RunTests(runner, timestreamClient, region));
 }
 
+// AppSync
+if (service == "all" || service == "appsync")
+{
+    var appsyncClient = new Amazon.AppSync.AmazonAppSyncClient(credentials, runner.CreateAppSyncConfig());
+    results.AddRange(await AppSyncServiceTests.RunTests(runner, appsyncClient, region));
+}
+
+// Cognito Identity
+if (service == "all" || service == "cognito-identity")
+{
+    var cognitoIdClient = new Amazon.CognitoIdentity.AmazonCognitoIdentityClient(credentials, runner.CreateCognitoIdentityConfig());
+    results.AddRange(await CognitoIdentityServiceTests.RunTests(runner, cognitoIdClient, region));
+}
+
+// NeptuneGraph
+if (service == "all" || service == "neptunegraph")
+{
+    var neptuneGraphClient = new Amazon.NeptuneGraph.AmazonNeptuneGraphClient(credentials, runner.CreateNeptuneGraphConfig());
+    results.AddRange(await NeptuneGraphServiceTests.RunTests(runner, neptuneGraphClient, region));
+}
+
+// Neptune
+if (service == "all" || service == "neptune")
+{
+    var neptuneClient = new Amazon.Neptune.AmazonNeptuneClient(credentials, runner.CreateNeptuneConfig());
+    results.AddRange(await NeptuneServiceTests.RunTests(runner, neptuneClient, region));
+}
+
+// NeptuneData
+if (service == "all" || service == "neptunedata")
+{
+    var neptuneDataClient = new Amazon.Neptunedata.AmazonNeptunedataClient(credentials, runner.CreateNeptuneDataConfig());
+    results.AddRange(await NeptuneDataServiceTests.RunTests(runner, neptuneDataClient, region));
+}
+
+// AppSync WebSocket
+if (service == "all" || service == "appsync-ws")
+{
+    results.AddRange(await AppSyncWebSocketTests.RunTests(runner));
+}
+
+// Integration
+if (service == "all" || service == "integration")
+{
+    results.AddRange(await IntegrationTests.RunTests(runner, endpoint, region, credentials));
+}
+
 runner.PrintReport(results, format);
 Environment.Exit(results.Any(r => r.Status == "FAIL") ? 1 : 0);

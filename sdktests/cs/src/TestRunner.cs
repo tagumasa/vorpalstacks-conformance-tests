@@ -28,6 +28,11 @@ using Amazon.Scheduler;
 using Amazon.WAF;
 using Amazon.WAFV2;
 using Amazon.TimestreamWrite;
+using Amazon.AppSync;
+using Amazon.CognitoIdentity;
+using Amazon.NeptuneGraph;
+using Amazon.Neptune;
+using Amazon.Neptunedata;
 using Amazon.Runtime;
 
 namespace VorpalStacks.SDK.Tests;
@@ -40,9 +45,9 @@ public class TestRunner
 
     public static readonly string[] AllServices =
     {
-        "acm", "apigateway", "athena", "cloudfront", "cloudtrail",
-        "cloudwatch", "cloudwatchlogs", "cognito", "dynamodb", "eventbridge",
-        "iam", "kinesis", "kms", "lambda", "route53", "s3",
+        "acm", "apigateway", "appsync", "appsync-ws", "athena", "cloudfront", "cloudtrail",
+        "cloudwatch", "cloudwatchlogs", "cognito", "cognito-identity", "dynamodb", "eventbridge",
+        "iam", "kinesis", "kms", "lambda", "neptune", "neptunegraph", "neptunedata", "route53", "s3",
         "scheduler", "secretsmanager", "sesv2", "sns", "sqs",
         "ssm", "sts", "sfn", "timestream", "waf"
     };
@@ -73,160 +78,219 @@ public class TestRunner
     public AmazonLambdaConfig CreateLambdaConfig() => new()
     {
         ServiceURL = _endpoint,
-        UseHttp = true
+        UseHttp = true,
+        DisableHostPrefixInjection = true
     };
 
     public AmazonDynamoDBConfig CreateDynamoDBConfig() => new()
     {
         ServiceURL = _endpoint,
-        UseHttp = true
+        UseHttp = true,
+        DisableHostPrefixInjection = true
     };
 
     public AmazonIdentityManagementServiceConfig CreateIAMConfig() => new()
     {
         ServiceURL = _endpoint,
-        UseHttp = true
+        UseHttp = true,
+        DisableHostPrefixInjection = true
     };
 
     public AmazonSQSConfig CreateSQSConfig() => new()
     {
         ServiceURL = _endpoint,
-        UseHttp = true
+        UseHttp = true,
+        DisableHostPrefixInjection = true
     };
 
     public AmazonSimpleNotificationServiceConfig CreateSNSConfig() => new()
     {
         ServiceURL = _endpoint,
-        UseHttp = true
+        UseHttp = true,
+        DisableHostPrefixInjection = true
     };
 
     public AmazonKeyManagementServiceConfig CreateKMSConfig() => new()
     {
         ServiceURL = _endpoint,
-        UseHttp = true
+        UseHttp = true,
+        DisableHostPrefixInjection = true
     };
 
     public AmazonCognitoIdentityProviderConfig CreateCognitoConfig() => new()
     {
         ServiceURL = _endpoint,
-        UseHttp = true
+        UseHttp = true,
+        DisableHostPrefixInjection = true
     };
 
     public AmazonEventBridgeConfig CreateEventBridgeConfig() => new()
     {
         ServiceURL = _endpoint,
-        UseHttp = true
+        UseHttp = true,
+        DisableHostPrefixInjection = true
     };
 
     public AmazonStepFunctionsConfig CreateStepFunctionsConfig() => new()
     {
         ServiceURL = _endpoint,
-        UseHttp = true
+        UseHttp = true,
+        DisableHostPrefixInjection = true
     };
 
     public AmazonKinesisConfig CreateKinesisConfig() => new()
     {
         ServiceURL = _endpoint,
-        UseHttp = true
+        UseHttp = true,
+        DisableHostPrefixInjection = true
     };
 
     public AmazonAthenaConfig CreateAthenaConfig() => new()
     {
         ServiceURL = _endpoint,
-        UseHttp = true
+        UseHttp = true,
+        DisableHostPrefixInjection = true
     };
 
     public AmazonSecretsManagerConfig CreateSecretsManagerConfig() => new()
     {
         ServiceURL = _endpoint,
-        UseHttp = true
+        UseHttp = true,
+        DisableHostPrefixInjection = true
     };
 
     public AmazonCloudWatchLogsConfig CreateCloudWatchLogsConfig() => new()
     {
         ServiceURL = _endpoint,
-        UseHttp = true
+        UseHttp = true,
+        DisableHostPrefixInjection = true
     };
 
     public AmazonAPIGatewayConfig CreateAPIGatewayConfig() => new()
     {
         ServiceURL = _endpoint,
-        UseHttp = true
+        UseHttp = true,
+        DisableHostPrefixInjection = true
     };
 
     public AmazonCertificateManagerConfig CreateACMConfig() => new()
     {
         ServiceURL = _endpoint,
-        UseHttp = true
+        UseHttp = true,
+        DisableHostPrefixInjection = true
     };
 
     public AmazonCloudWatchConfig CreateCloudWatchConfig() => new()
     {
         ServiceURL = _endpoint,
-        UseHttp = true
+        UseHttp = true,
+        DisableHostPrefixInjection = true
     };
 
     public AmazonRoute53Config CreateRoute53Config() => new()
     {
         ServiceURL = _endpoint,
-        UseHttp = true
+        UseHttp = true,
+        DisableHostPrefixInjection = true
     };
 
     public AmazonSecurityTokenServiceConfig CreateSTSConfig() => new()
     {
         ServiceURL = _endpoint,
-        UseHttp = true
+        UseHttp = true,
+        DisableHostPrefixInjection = true
     };
 
     public AmazonCloudFrontConfig CreateCloudFrontConfig() => new()
     {
         ServiceURL = _endpoint,
-        UseHttp = true
+        UseHttp = true,
+        DisableHostPrefixInjection = true
     };
 
     public AmazonCloudTrailConfig CreateCloudTrailConfig() => new()
     {
         ServiceURL = _endpoint,
-        UseHttp = true
+        UseHttp = true,
+        DisableHostPrefixInjection = true
     };
 
     public AmazonSimpleEmailServiceV2Config CreateSESv2Config() => new()
     {
         ServiceURL = _endpoint,
-        UseHttp = true
+        UseHttp = true,
+        DisableHostPrefixInjection = true
     };
 
     public AmazonSimpleSystemsManagementConfig CreateSSMConfig() => new()
     {
         ServiceURL = _endpoint,
-        UseHttp = true
+        UseHttp = true,
+        DisableHostPrefixInjection = true
     };
 
     public AmazonSchedulerConfig CreateSchedulerConfig() => new()
     {
         ServiceURL = _endpoint,
-        UseHttp = true
+        UseHttp = true,
+        DisableHostPrefixInjection = true
     };
 
     public AmazonWAFConfig CreateWAFConfig() => new()
     {
         ServiceURL = _endpoint,
-        UseHttp = true
+        UseHttp = true,
+        DisableHostPrefixInjection = true
     };
 
     public AmazonWAFV2Config CreateWAFv2Config() => new()
     {
         ServiceURL = _endpoint,
-        UseHttp = true
+        UseHttp = true,
+        DisableHostPrefixInjection = true
     };
 
     public AmazonTimestreamWriteConfig CreateTimestreamWriteConfig() => new()
     {
         ServiceURL = _endpoint,
+        UseHttp = true,
+        DisableHostPrefixInjection = true
+    };
+
+    public AmazonAppSyncConfig CreateAppSyncConfig() => new()
+    {
+        ServiceURL = _endpoint,
+        UseHttp = true,
+        DisableHostPrefixInjection = true
+    };
+
+    public AmazonCognitoIdentityConfig CreateCognitoIdentityConfig() => new()
+    {
+        ServiceURL = _endpoint,
+        UseHttp = true,
+        DisableHostPrefixInjection = true
+    };
+
+    public AmazonNeptuneGraphConfig CreateNeptuneGraphConfig() => new()
+    {
+        ServiceURL = _endpoint,
+        UseHttp = true,
+        DisableHostPrefixInjection = true
+    };
+
+    public AmazonNeptuneConfig CreateNeptuneConfig() => new()
+    {
+        ServiceURL = _endpoint,
         UseHttp = true
     };
 
-    public TestResult RunTest(string service, string testName, Action testFunc)
+    public AmazonNeptunedataConfig CreateNeptuneDataConfig() => new()
+    {
+        ServiceURL = _endpoint,
+        UseHttp = true
+    };
+
+    public TestResult RunTest(string service, string testName, System.Action testFunc)
     {
         var sw = Stopwatch.StartNew();
         var result = new TestResult
@@ -296,6 +360,21 @@ public class TestRunner
         }
 
         return result;
+    }
+
+    public TestResult SkipTest(string service, string testName, string reason)
+    {
+        if (_verbose)
+        {
+            Console.WriteLine($"  [SKIP] {service}/{testName}: {reason}");
+        }
+        return new TestResult
+        {
+            Service = service,
+            TestName = testName,
+            Status = "SKIP",
+            Error = reason
+        };
     }
 
     public void PrintReport(List<TestResult> results, string format)

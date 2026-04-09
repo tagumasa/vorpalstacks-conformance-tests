@@ -440,6 +440,495 @@ public static class AthenaServiceTests
                 {
                 }
             }));
+
+            var tagWgName = TestRunner.MakeUniqueName("TagWG");
+            try
+            {
+                await athenaClient.CreateWorkGroupAsync(new CreateWorkGroupRequest { Name = tagWgName });
+
+                var tagWgArn = $"arn:aws:athena:{region}:000000000000:workgroup/{tagWgName}";
+
+                results.Add(await runner.RunTestAsync("athena", "TagResource_CreateWG", async () =>
+                {
+                    await athenaClient.TagResourceAsync(new TagResourceRequest
+                    {
+                        ResourceARN = tagWgArn,
+                        Tags = new List<Tag> { new Tag { Key = "Environment", Value = "test" } }
+                    });
+                }));
+
+                results.Add(await runner.RunTestAsync("athena", "TagResource", async () =>
+                {
+                    await athenaClient.TagResourceAsync(new TagResourceRequest
+                    {
+                        ResourceARN = tagWgArn,
+                        Tags = new List<Tag> { new Tag { Key = "Team", Value = "conformance" } }
+                    });
+                }));
+
+                results.Add(await runner.RunTestAsync("athena", "ListTagsForResource", async () =>
+                {
+                    var resp = await athenaClient.ListTagsForResourceAsync(new ListTagsForResourceRequest
+                    {
+                        ResourceARN = tagWgArn
+                    });
+                    if (resp.Tags == null)
+                        throw new Exception("tags list is null");
+                }));
+
+                results.Add(await runner.RunTestAsync("athena", "UntagResource", async () =>
+                {
+                    await athenaClient.UntagResourceAsync(new UntagResourceRequest
+                    {
+                        ResourceARN = tagWgArn,
+                        TagKeys = new List<string> { "Team" }
+                    });
+                }));
+
+                results.Add(await runner.RunTestAsync("athena", "ListTagsForResource_AfterUntag", async () =>
+                {
+                    var resp = await athenaClient.ListTagsForResourceAsync(new ListTagsForResourceRequest
+                    {
+                        ResourceARN = tagWgArn
+                    });
+                    if (resp.Tags != null)
+                    {
+                        foreach (var t in resp.Tags)
+                        {
+                            if (t.Key == "Team")
+                                throw new Exception("Team tag should have been removed");
+                        }
+                    }
+                }));
+
+                results.Add(await runner.RunTestAsync("athena", "DeleteWorkGroup_TagCleanup", async () =>
+                {
+                    await athenaClient.DeleteWorkGroupAsync(new DeleteWorkGroupRequest
+                    {
+                        WorkGroup = tagWgName
+                    });
+                }));
+            }
+            finally
+            {
+                await TestHelpers.SafeCleanupAsync(async () => { await athenaClient.DeleteWorkGroupAsync(new DeleteWorkGroupRequest { WorkGroup = tagWgName }); });
+            }
+
+            var tagCatalogName = TestRunner.MakeUniqueName("TagCatalog");
+            try
+            {
+                await athenaClient.CreateDataCatalogAsync(new CreateDataCatalogRequest
+                {
+                    Name = tagCatalogName,
+                    Type = DataCatalogType.GLUE
+                });
+
+                results.Add(await runner.RunTestAsync("athena", "TagResource_DataCatalog", async () =>
+                {
+                    var catalogArn = $"arn:aws:athena:{region}:000000000000:datacatalog/{tagCatalogName}";
+                    await athenaClient.TagResourceAsync(new TagResourceRequest
+                    {
+                        ResourceARN = catalogArn,
+                        Tags = new List<Tag> { new Tag { Key = "Env", Value = "test" } }
+                    });
+                }));
+
+                results.Add(await runner.RunTestAsync("athena", "DeleteDataCatalog_TagCleanup", async () =>
+                {
+                    await athenaClient.DeleteDataCatalogAsync(new DeleteDataCatalogRequest { Name = tagCatalogName });
+                }));
+            }
+            finally
+            {
+                await TestHelpers.SafeCleanupAsync(async () => { await athenaClient.DeleteDataCatalogAsync(new DeleteDataCatalogRequest { Name = tagCatalogName }); });
+            }
+
+            var psWgName = TestRunner.MakeUniqueName("PSWG");
+            var psQueryName = "test_prepared_stmt";
+            string? psWgArn = null;
+            try
+            {
+                await athenaClient.CreateWorkGroupAsync(new CreateWorkGroupRequest { Name = psWgName });
+
+                results.Add(await runner.RunTestAsync("athena", "PreparedStatement_CreateWG", async () =>
+                {
+                    var wgResp = await athenaClient.GetWorkGroupAsync(new GetWorkGroupRequest { WorkGroup = psWgName });
+                    psWgArn = $"arn:aws:athena:{region}:000000000000:workgroup/{psWgName}";
+                    if (wgResp.WorkGroup == null)
+                        throw new Exception("work group is null");
+                }));
+
+                results.Add(await runner.RunTestAsync("athena", "CreatePreparedStatement", async () =>
+                {
+                    var resp = await athenaClient.CreatePreparedStatementAsync(new CreatePreparedStatementRequest
+                    {
+                        WorkGroup = psWgName,
+                        StatementName = psQueryName,
+                        QueryStatement = "SELECT * FROM default.test WHERE col = :var1"
+                    });
+                    if (resp == null)
+                        throw new Exception("response is null");
+                }));
+
+                results.Add(await runner.RunTestAsync("athena", "CreatePreparedStatement_Duplicate", async () =>
+                {
+                    try
+                    {
+                        await athenaClient.CreatePreparedStatementAsync(new CreatePreparedStatementRequest
+                        {
+                            WorkGroup = psWgName,
+                            StatementName = psQueryName,
+                            QueryStatement = "SELECT 1"
+                        });
+                        throw new Exception("expected error for duplicate prepared statement");
+                    }
+                    catch (InvalidRequestException) { }
+                }));
+
+                results.Add(await runner.RunTestAsync("athena", "GetPreparedStatement", async () =>
+                {
+                    var resp = await athenaClient.GetPreparedStatementAsync(new GetPreparedStatementRequest
+                    {
+                        WorkGroup = psWgName,
+                        StatementName = psQueryName
+                    });
+                    if (resp.PreparedStatement == null)
+                        throw new Exception("prepared statement is null");
+                }));
+
+                results.Add(await runner.RunTestAsync("athena", "ListPreparedStatements", async () =>
+                {
+                    var resp = await athenaClient.ListPreparedStatementsAsync(new ListPreparedStatementsRequest
+                    {
+                        WorkGroup = psWgName
+                    });
+                    if (resp.PreparedStatements == null)
+                        throw new Exception("prepared statements list is null");
+                }));
+
+                results.Add(await runner.RunTestAsync("athena", "UpdatePreparedStatement", async () =>
+                {
+                    await athenaClient.UpdatePreparedStatementAsync(new UpdatePreparedStatementRequest
+                    {
+                        WorkGroup = psWgName,
+                        StatementName = psQueryName,
+                        QueryStatement = "SELECT * FROM default.test WHERE col2 = :var2"
+                    });
+                }));
+
+                results.Add(await runner.RunTestAsync("athena", "GetPreparedStatement_AfterUpdate", async () =>
+                {
+                    var resp = await athenaClient.GetPreparedStatementAsync(new GetPreparedStatementRequest
+                    {
+                        WorkGroup = psWgName,
+                        StatementName = psQueryName
+                    });
+                    if (resp.PreparedStatement.QueryStatement != "SELECT * FROM default.test WHERE col2 = :var2")
+                        throw new Exception("prepared statement not updated");
+                }));
+
+                var psSecondName = "test_prepared_stmt_2";
+                results.Add(await runner.RunTestAsync("athena", "CreatePreparedStatement_Second", async () =>
+                {
+                    await athenaClient.CreatePreparedStatementAsync(new CreatePreparedStatementRequest
+                    {
+                        WorkGroup = psWgName,
+                        StatementName = psSecondName,
+                        QueryStatement = "SELECT 42"
+                    });
+                }));
+
+                results.Add(await runner.RunTestAsync("athena", "BatchGetPreparedStatement", async () =>
+                {
+                    var resp = await athenaClient.BatchGetPreparedStatementAsync(new BatchGetPreparedStatementRequest
+                    {
+                        PreparedStatementNames = new List<string> { psQueryName, psSecondName },
+                        WorkGroup = psWgName
+                    });
+                    if (resp.PreparedStatements == null)
+                        throw new Exception("prepared statements batch result is null");
+                }));
+
+                results.Add(await runner.RunTestAsync("athena", "DeletePreparedStatement", async () =>
+                {
+                    await athenaClient.DeletePreparedStatementAsync(new DeletePreparedStatementRequest
+                    {
+                        WorkGroup = psWgName,
+                        StatementName = psQueryName
+                    });
+                }));
+
+                results.Add(await runner.RunTestAsync("athena", "GetPreparedStatement_NonExistent", async () =>
+                {
+                    try
+                    {
+                        await athenaClient.GetPreparedStatementAsync(new GetPreparedStatementRequest
+                        {
+                            WorkGroup = psWgName,
+                            StatementName = "nonexistent_ps_xyz"
+                        });
+                        throw new Exception("expected error for non-existent prepared statement");
+                    }
+                    catch (InvalidRequestException) { }
+                }));
+
+                results.Add(await runner.RunTestAsync("athena", "DeletePreparedStatement_NonExistent", async () =>
+                {
+                    try
+                    {
+                        await athenaClient.DeletePreparedStatementAsync(new DeletePreparedStatementRequest
+                        {
+                            WorkGroup = psWgName,
+                            StatementName = "nonexistent_ps_xyz"
+                        });
+                        throw new Exception("expected error for non-existent prepared statement");
+                    }
+                    catch (InvalidRequestException) { }
+                }));
+
+                results.Add(await runner.RunTestAsync("athena", "DeleteWorkGroup_PSCleanup", async () =>
+                {
+                    await athenaClient.DeleteWorkGroupAsync(new DeleteWorkGroupRequest
+                    {
+                        WorkGroup = psWgName,
+                        RecursiveDeleteOption = true
+                    });
+                }));
+            }
+            finally
+            {
+                await TestHelpers.SafeCleanupAsync(async () => { await athenaClient.DeleteWorkGroupAsync(new DeleteWorkGroupRequest { WorkGroup = psWgName, RecursiveDeleteOption = true }); });
+            }
+
+            string? batchNqId1 = null;
+            string? batchNqId2 = null;
+            var batchNq1 = TestRunner.MakeUniqueName("BatchNQ1");
+            var batchNq2 = TestRunner.MakeUniqueName("BatchNQ2");
+            try
+            {
+                var createResp1 = await athenaClient.CreateNamedQueryAsync(new CreateNamedQueryRequest
+                {
+                    Name = batchNq1,
+                    Database = "default",
+                    QueryString = "SELECT 100"
+                });
+                batchNqId1 = createResp1.NamedQueryId;
+                var createResp2 = await athenaClient.CreateNamedQueryAsync(new CreateNamedQueryRequest
+                {
+                    Name = batchNq2,
+                    Database = "default",
+                    QueryString = "SELECT 200"
+                });
+                batchNqId2 = createResp2.NamedQueryId;
+
+                results.Add(await runner.RunTestAsync("athena", "BatchGetNamedQuery_Setup", async () =>
+                {
+                    if (batchNqId1 == null || batchNqId2 == null)
+                        throw new Exception("batch named query IDs are null");
+                }));
+
+                results.Add(await runner.RunTestAsync("athena", "BatchGetNamedQuery", async () =>
+                {
+                    var resp = await athenaClient.BatchGetNamedQueryAsync(new BatchGetNamedQueryRequest
+                    {
+                        NamedQueryIds = new List<string> { batchNqId1!, batchNqId2! }
+                    });
+                    if (resp.NamedQueries == null)
+                        throw new Exception("named queries batch result is null");
+                    if (resp.NamedQueries.Count < 2)
+                        throw new Exception($"expected at least 2 named queries, got {resp.NamedQueries.Count}");
+                }));
+            }
+            finally
+            {
+                if (batchNqId1 != null)
+                    await TestHelpers.SafeCleanupAsync(async () => { await athenaClient.DeleteNamedQueryAsync(new DeleteNamedQueryRequest { NamedQueryId = batchNqId1 }); });
+                if (batchNqId2 != null)
+                    await TestHelpers.SafeCleanupAsync(async () => { await athenaClient.DeleteNamedQueryAsync(new DeleteNamedQueryRequest { NamedQueryId = batchNqId2 }); });
+            }
+
+            string? qrExecId = null;
+            results.Add(await runner.RunTestAsync("athena", "GetQueryResults_StartQuery", async () =>
+            {
+                try
+                {
+                    var startResp = await athenaClient.StartQueryExecutionAsync(new StartQueryExecutionRequest
+                    {
+                        QueryString = "SELECT 1",
+                        QueryExecutionContext = new QueryExecutionContext { Database = "default" },
+                        ResultConfiguration = new ResultConfiguration { OutputLocation = "s3://test-bucket/athena/" }
+                    });
+                    qrExecId = startResp.QueryExecutionId;
+                }
+                catch (InvalidRequestException) { }
+            }));
+
+            results.Add(await runner.RunTestAsync("athena", "GetQueryResults_WaitForCompletion", async () =>
+            {
+                if (qrExecId == null) return;
+                for (int i = 0; i < 20; i++)
+                {
+                    var execResp = await athenaClient.GetQueryExecutionAsync(new GetQueryExecutionRequest { QueryExecutionId = qrExecId });
+                    var state = execResp.QueryExecution.Status.State;
+                    if (state == QueryExecutionState.SUCCEEDED || state == QueryExecutionState.FAILED || state == QueryExecutionState.CANCELLED)
+                        break;
+                    await Task.Delay(1000);
+                }
+            }));
+
+            results.Add(await runner.RunTestAsync("athena", "GetQueryResults", async () =>
+            {
+                if (qrExecId == null) return;
+                try
+                {
+                    var resp = await athenaClient.GetQueryResultsAsync(new GetQueryResultsRequest
+                    {
+                        QueryExecutionId = qrExecId
+                    });
+                    if (resp.ResultSet == null)
+                        throw new Exception("result set is null");
+                }
+                catch (InvalidRequestException) { }
+            }));
+
+            results.Add(await runner.RunTestAsync("athena", "GetQueryRuntimeStatistics", async () =>
+            {
+                if (qrExecId == null) return;
+                try
+                {
+                    var resp = await athenaClient.GetQueryRuntimeStatisticsAsync(new GetQueryRuntimeStatisticsRequest
+                    {
+                        QueryExecutionId = qrExecId
+                    });
+                }
+                catch (InvalidRequestException) { }
+            }));
+
+            var udcCatalogName = TestRunner.MakeUniqueName("UDCCatalog");
+            try
+            {
+                await athenaClient.CreateDataCatalogAsync(new CreateDataCatalogRequest
+                {
+                    Name = udcCatalogName,
+                    Type = DataCatalogType.GLUE,
+                    Description = "Original description"
+                });
+
+                results.Add(await runner.RunTestAsync("athena", "UpdateDataCatalog_Setup", async () =>
+                {
+                    var resp = await athenaClient.GetDataCatalogAsync(new GetDataCatalogRequest { Name = udcCatalogName });
+                    if (resp.DataCatalog == null)
+                        throw new Exception("catalog is null");
+                }));
+
+                results.Add(await runner.RunTestAsync("athena", "UpdateDataCatalog", async () =>
+                {
+                    await athenaClient.UpdateDataCatalogAsync(new UpdateDataCatalogRequest
+                    {
+                        Name = udcCatalogName,
+                        Type = DataCatalogType.GLUE,
+                        Description = "Updated description"
+                    });
+                }));
+
+                results.Add(await runner.RunTestAsync("athena", "UpdateDataCatalog_Verify", async () =>
+                {
+                    var resp = await athenaClient.GetDataCatalogAsync(new GetDataCatalogRequest { Name = udcCatalogName });
+                    if (resp.DataCatalog.Description != "Updated description")
+                        throw new Exception($"expected 'Updated description', got '{resp.DataCatalog.Description}'");
+                }));
+
+                results.Add(await runner.RunTestAsync("athena", "DeleteDataCatalog_UDCCleanup", async () =>
+                {
+                    await athenaClient.DeleteDataCatalogAsync(new DeleteDataCatalogRequest { Name = udcCatalogName });
+                }));
+            }
+            finally
+            {
+                await TestHelpers.SafeCleanupAsync(async () => { await athenaClient.DeleteDataCatalogAsync(new DeleteDataCatalogRequest { Name = udcCatalogName }); });
+            }
+
+            results.Add(await runner.RunTestAsync("athena", "ListEngineVersions", async () =>
+            {
+                var resp = await athenaClient.ListEngineVersionsAsync(new ListEngineVersionsRequest());
+                if (resp.EngineVersions == null)
+                    throw new Exception("engine versions list is null");
+            }));
+
+            string? bqeExecId1 = null;
+            string? bqeExecId2 = null;
+            try
+            {
+                try
+                {
+                    var startResp1 = await athenaClient.StartQueryExecutionAsync(new StartQueryExecutionRequest
+                    {
+                        QueryString = "SELECT 10",
+                        QueryExecutionContext = new QueryExecutionContext { Database = "default" },
+                        ResultConfiguration = new ResultConfiguration { OutputLocation = "s3://test-bucket/athena/" }
+                    });
+                    bqeExecId1 = startResp1.QueryExecutionId;
+                    var startResp2 = await athenaClient.StartQueryExecutionAsync(new StartQueryExecutionRequest
+                    {
+                        QueryString = "SELECT 20",
+                        QueryExecutionContext = new QueryExecutionContext { Database = "default" },
+                        ResultConfiguration = new ResultConfiguration { OutputLocation = "s3://test-bucket/athena/" }
+                    });
+                    bqeExecId2 = startResp2.QueryExecutionId;
+                }
+                catch (InvalidRequestException) { }
+
+                results.Add(await runner.RunTestAsync("athena", "BatchGetQueryExecution_Setup", async () =>
+                {
+                    if (bqeExecId1 == null || bqeExecId2 == null)
+                        throw new Exception("batch query execution IDs are null");
+                }));
+
+                results.Add(await runner.RunTestAsync("athena", "BatchGetQueryExecution", async () =>
+                {
+                    if (bqeExecId1 == null || bqeExecId2 == null) return;
+                    var ids = new List<string> { bqeExecId1, bqeExecId2 };
+                    var resp = await athenaClient.BatchGetQueryExecutionAsync(new BatchGetQueryExecutionRequest
+                    {
+                        QueryExecutionIds = ids
+                    });
+                    if (resp.QueryExecutions == null)
+                        throw new Exception("query executions batch result is null");
+                }));
+            }
+            catch { }
+
+            results.Add(await runner.RunTestAsync("athena", "GetTableMetadata_NonExistent", async () =>
+            {
+                try
+                {
+                    await athenaClient.GetTableMetadataAsync(new GetTableMetadataRequest
+                    {
+                        CatalogName = "AwsDataCatalog",
+                        DatabaseName = "default",
+                        TableName = "nonexistent_table_xyz_12345"
+                    });
+                    throw new Exception("expected error for non-existent table metadata");
+                }
+                catch (MetadataException) { }
+            }));
+
+            results.Add(await runner.RunTestAsync("athena", "ListWorkGroups_Pagination", async () =>
+            {
+                var resp = await athenaClient.ListWorkGroupsAsync(new ListWorkGroupsRequest { MaxResults = 5 });
+                if (resp.WorkGroups == null)
+                    throw new Exception("work groups list is null");
+                if (!string.IsNullOrEmpty(resp.NextToken))
+                {
+                    var resp2 = await athenaClient.ListWorkGroupsAsync(new ListWorkGroupsRequest
+                    {
+                        MaxResults = 5,
+                        NextToken = resp.NextToken
+                    });
+                    if (resp2.WorkGroups == null)
+                        throw new Exception("work groups list page 2 is null");
+                }
+            }));
         }
         finally
         {

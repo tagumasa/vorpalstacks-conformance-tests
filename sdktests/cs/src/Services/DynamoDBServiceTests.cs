@@ -1,11 +1,9 @@
-using Amazon;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
-using Amazon.Runtime;
 
 namespace VorpalStacks.SDK.Tests.Services;
 
-public static class DynamoDBServiceTests
+public static partial class DynamoDBServiceTests
 {
     public static async Task<List<TestResult>> RunTests(
         TestRunner runner,
@@ -20,27 +18,26 @@ public static class DynamoDBServiceTests
         {
             results.Add(await runner.RunTestAsync("dynamodb", "CreateTable", async () =>
             {
-                await dynamoClient.CreateTableAsync(new CreateTableRequest
+                var resp = await dynamoClient.CreateTableAsync(new CreateTableRequest
                 {
                     TableName = tableName,
                     AttributeDefinitions = new List<AttributeDefinition>
                     {
-                        new AttributeDefinition { AttributeName = "id", AttributeType = "S" }
+                        new() { AttributeName = "id", AttributeType = "S" }
                     },
                     KeySchema = new List<KeySchemaElement>
                     {
-                        new KeySchemaElement { AttributeName = "id", KeyType = "HASH" }
+                        new() { AttributeName = "id", KeyType = "HASH" }
                     },
                     BillingMode = "PAY_PER_REQUEST"
                 });
+                if (resp.TableDescription == null)
+                    throw new Exception("TableDescription is null");
             }));
 
             results.Add(await runner.RunTestAsync("dynamodb", "DescribeTable", async () =>
             {
-                var resp = await dynamoClient.DescribeTableAsync(new DescribeTableRequest
-                {
-                    TableName = tableName
-                });
+                var resp = await dynamoClient.DescribeTableAsync(new DescribeTableRequest { TableName = tableName });
                 if (resp.Table == null)
                     throw new Exception("Table is null");
             }));
@@ -60,7 +57,8 @@ public static class DynamoDBServiceTests
                     Item = new Dictionary<string, AttributeValue>
                     {
                         { "id", new AttributeValue { S = "test1" } },
-                        { "name", new AttributeValue { S = "Test Item" } }
+                        { "name", new AttributeValue { S = "Test Item" } },
+                        { "count", new AttributeValue { N = "42" } }
                     }
                 });
             }));
@@ -70,13 +68,12 @@ public static class DynamoDBServiceTests
                 var resp = await dynamoClient.GetItemAsync(new GetItemRequest
                 {
                     TableName = tableName,
-                    Key = new Dictionary<string, AttributeValue>
-                    {
-                        { "id", new AttributeValue { S = "test1" } }
-                    }
+                    Key = new Dictionary<string, AttributeValue> { { "id", new AttributeValue { S = "test1" } } }
                 });
                 if (resp.Item == null || resp.Item.Count == 0)
                     throw new Exception("Item is null");
+                if (!resp.Item.ContainsKey("name") || resp.Item["name"].S != "Test Item")
+                    throw new Exception("name mismatch");
             }));
 
             results.Add(await runner.RunTestAsync("dynamodb", "GetItem_NonExistentKey", async () =>
@@ -84,10 +81,7 @@ public static class DynamoDBServiceTests
                 var resp = await dynamoClient.GetItemAsync(new GetItemRequest
                 {
                     TableName = tableName,
-                    Key = new Dictionary<string, AttributeValue>
-                    {
-                        { "id", new AttributeValue { S = "nonexistent-key-xyz" } }
-                    }
+                    Key = new Dictionary<string, AttributeValue> { { "id", new AttributeValue { S = "nonexistent-key-xyz" } } }
                 });
                 if (resp.Item != null && resp.Item.Count > 0)
                     throw new Exception("Expected empty item for non-existent key");
@@ -98,19 +92,10 @@ public static class DynamoDBServiceTests
                 var resp = await dynamoClient.UpdateItemAsync(new UpdateItemRequest
                 {
                     TableName = tableName,
-                    Key = new Dictionary<string, AttributeValue>
-                    {
-                        { "id", new AttributeValue { S = "test1" } }
-                    },
+                    Key = new Dictionary<string, AttributeValue> { { "id", new AttributeValue { S = "test1" } } },
                     UpdateExpression = "SET #n = :name",
-                    ExpressionAttributeNames = new Dictionary<string, string>
-                    {
-                        { "#n", "name" }
-                    },
-                    ExpressionAttributeValues = new Dictionary<string, AttributeValue>
-                    {
-                        { ":name", new AttributeValue { S = "Updated" } }
-                    },
+                    ExpressionAttributeNames = new Dictionary<string, string> { { "#n", "name" } },
+                    ExpressionAttributeValues = new Dictionary<string, AttributeValue> { { ":name", new AttributeValue { S = "Updated" } } },
                     ReturnValues = "ALL_NEW"
                 });
                 if (resp.Attributes == null || !resp.Attributes.ContainsKey("name") || resp.Attributes["name"].S != "Updated")
@@ -123,10 +108,7 @@ public static class DynamoDBServiceTests
                 {
                     TableName = tableName,
                     KeyConditionExpression = "id = :id",
-                    ExpressionAttributeValues = new Dictionary<string, AttributeValue>
-                    {
-                        { ":id", new AttributeValue { S = "test1" } }
-                    }
+                    ExpressionAttributeValues = new Dictionary<string, AttributeValue> { { ":id", new AttributeValue { S = "test1" } } }
                 });
                 if (resp.Count <= 0)
                     throw new Exception("Query returned no items");
@@ -134,10 +116,7 @@ public static class DynamoDBServiceTests
 
             results.Add(await runner.RunTestAsync("dynamodb", "Scan", async () =>
             {
-                var resp = await dynamoClient.ScanAsync(new ScanRequest
-                {
-                    TableName = tableName
-                });
+                var resp = await dynamoClient.ScanAsync(new ScanRequest { TableName = tableName });
                 if (resp.Count <= 0)
                     throw new Exception("Scan returned no items");
             }));
@@ -151,28 +130,8 @@ public static class DynamoDBServiceTests
                         {
                             tableName, new List<WriteRequest>
                             {
-                                new WriteRequest
-                                {
-                                    PutRequest = new PutRequest
-                                    {
-                                        Item = new Dictionary<string, AttributeValue>
-                                        {
-                                            { "id", new AttributeValue { S = "batch1" } },
-                                            { "data", new AttributeValue { S = "batch item 1" } }
-                                        }
-                                    }
-                                },
-                                new WriteRequest
-                                {
-                                    PutRequest = new PutRequest
-                                    {
-                                        Item = new Dictionary<string, AttributeValue>
-                                        {
-                                            { "id", new AttributeValue { S = "batch2" } },
-                                            { "data", new AttributeValue { S = "batch item 2" } }
-                                        }
-                                    }
-                                }
+                                new() { PutRequest = new PutRequest { Item = new Dictionary<string, AttributeValue> { { "id", new AttributeValue { S = "batch1" } }, { "data", new AttributeValue { S = "batch item 1" } } } } },
+                                new() { PutRequest = new PutRequest { Item = new Dictionary<string, AttributeValue> { { "id", new AttributeValue { S = "batch2" } }, { "data", new AttributeValue { S = "batch item 2" } } } } }
                             }
                         }
                     }
@@ -192,14 +151,8 @@ public static class DynamoDBServiceTests
                             {
                                 Keys = new List<Dictionary<string, AttributeValue>>
                                 {
-                                    new Dictionary<string, AttributeValue>
-                                    {
-                                        { "id", new AttributeValue { S = "batch1" } }
-                                    },
-                                    new Dictionary<string, AttributeValue>
-                                    {
-                                        { "id", new AttributeValue { S = "batch2" } }
-                                    }
+                                    new() { { "id", new AttributeValue { S = "batch1" } } },
+                                    new() { { "id", new AttributeValue { S = "batch2" } } }
                                 }
                             }
                         }
@@ -214,19 +167,13 @@ public static class DynamoDBServiceTests
                 await dynamoClient.TagResourceAsync(new TagResourceRequest
                 {
                     ResourceArn = tableArn,
-                    Tags = new List<Tag>
-                    {
-                        new Tag { Key = "Environment", Value = "Test" }
-                    }
+                    Tags = new List<Tag> { new() { Key = "Environment", Value = "Test" } }
                 });
             }));
 
             results.Add(await runner.RunTestAsync("dynamodb", "ListTagsOfResource", async () =>
             {
-                var resp = await dynamoClient.ListTagsOfResourceAsync(new ListTagsOfResourceRequest
-                {
-                    ResourceArn = tableArn
-                });
+                var resp = await dynamoClient.ListTagsOfResourceAsync(new ListTagsOfResourceRequest { ResourceArn = tableArn });
                 if (resp.Tags == null || resp.Tags.Count == 0)
                     throw new Exception("No tags found");
             }));
@@ -242,23 +189,18 @@ public static class DynamoDBServiceTests
 
             results.Add(await runner.RunTestAsync("dynamodb", "UpdateTimeToLive", async () =>
             {
-                await dynamoClient.UpdateTimeToLiveAsync(new UpdateTimeToLiveRequest
+                var resp = await dynamoClient.UpdateTimeToLiveAsync(new UpdateTimeToLiveRequest
                 {
                     TableName = tableName,
-                    TimeToLiveSpecification = new TimeToLiveSpecification
-                    {
-                        AttributeName = "ttl",
-                        Enabled = true
-                    }
+                    TimeToLiveSpecification = new TimeToLiveSpecification { AttributeName = "ttl", Enabled = true }
                 });
+                if (resp.TimeToLiveSpecification == null)
+                    throw new Exception("TimeToLiveSpecification is nil");
             }));
 
             results.Add(await runner.RunTestAsync("dynamodb", "DescribeTimeToLive", async () =>
             {
-                var resp = await dynamoClient.DescribeTimeToLiveAsync(new DescribeTimeToLiveRequest
-                {
-                    TableName = tableName
-                });
+                var resp = await dynamoClient.DescribeTimeToLiveAsync(new DescribeTimeToLiveRequest { TableName = tableName });
                 if (resp.TimeToLiveDescription == null)
                     throw new Exception("TimeToLiveDescription is null");
             }));
@@ -272,6 +214,10 @@ public static class DynamoDBServiceTests
                 });
                 if (resp.BackupDetails == null)
                     throw new Exception("BackupDetails is null");
+                await TestHelpers.SafeCleanupAsync(async () =>
+                {
+                    await dynamoClient.DeleteBackupAsync(new DeleteBackupRequest { BackupArn = resp.BackupDetails.BackupArn });
+                });
             }));
 
             results.Add(await runner.RunTestAsync("dynamodb", "ListBackups", async () =>
@@ -283,32 +229,30 @@ public static class DynamoDBServiceTests
 
             results.Add(await runner.RunTestAsync("dynamodb", "DescribeContinuousBackups", async () =>
             {
-                var resp = await dynamoClient.DescribeContinuousBackupsAsync(new DescribeContinuousBackupsRequest
-                {
-                    TableName = tableName
-                });
+                var resp = await dynamoClient.DescribeContinuousBackupsAsync(new DescribeContinuousBackupsRequest { TableName = tableName });
                 if (resp.ContinuousBackupsDescription == null)
                     throw new Exception("ContinuousBackupsDescription is null");
             }));
 
             results.Add(await runner.RunTestAsync("dynamodb", "UpdateContinuousBackups", async () =>
             {
-                await dynamoClient.UpdateContinuousBackupsAsync(new UpdateContinuousBackupsRequest
+                var resp = await dynamoClient.UpdateContinuousBackupsAsync(new UpdateContinuousBackupsRequest
                 {
                     TableName = tableName,
-                    PointInTimeRecoverySpecification = new PointInTimeRecoverySpecification
-                    {
-                        PointInTimeRecoveryEnabled = true
-                    }
+                    PointInTimeRecoverySpecification = new PointInTimeRecoverySpecification { PointInTimeRecoveryEnabled = true }
                 });
+                if (resp.ContinuousBackupsDescription == null)
+                    throw new Exception("ContinuousBackupsDescription is nil");
             }));
 
             results.Add(await runner.RunTestAsync("dynamodb", "ExecuteStatement", async () =>
             {
-                await dynamoClient.ExecuteStatementAsync(new ExecuteStatementRequest
+                var resp = await dynamoClient.ExecuteStatementAsync(new ExecuteStatementRequest
                 {
                     Statement = $"INSERT INTO \"{tableName}\" VALUE {{'id': 'partiq1', 'name': 'PartiQL Item'}}"
                 });
+                if (resp == null)
+                    throw new Exception("ExecuteStatement response is null");
             }));
 
             results.Add(await runner.RunTestAsync("dynamodb", "ExecuteStatement_Select", async () =>
@@ -327,18 +271,7 @@ public static class DynamoDBServiceTests
                 {
                     TransactItems = new List<TransactWriteItem>
                     {
-                        new TransactWriteItem
-                        {
-                            Put = new Put
-                            {
-                                TableName = tableName,
-                                Item = new Dictionary<string, AttributeValue>
-                                {
-                                    { "id", new AttributeValue { S = "txn1" } },
-                                    { "name", new AttributeValue { S = "Transaction Item" } }
-                                }
-                            }
-                        }
+                        new() { Put = new Put { TableName = tableName, Item = new Dictionary<string, AttributeValue> { { "id", new AttributeValue { S = "txn1" } }, { "name", new AttributeValue { S = "Transaction Item" } } } } }
                     }
                 });
             }));
@@ -349,17 +282,7 @@ public static class DynamoDBServiceTests
                 {
                     TransactItems = new List<TransactGetItem>
                     {
-                        new TransactGetItem
-                        {
-                            Get = new Get
-                            {
-                                TableName = tableName,
-                                Key = new Dictionary<string, AttributeValue>
-                                {
-                                    { "id", new AttributeValue { S = "txn1" } }
-                                }
-                            }
-                        }
+                        new() { Get = new Get { TableName = tableName, Key = new Dictionary<string, AttributeValue> { { "id", new AttributeValue { S = "txn1" } } } } }
                     }
                 });
                 if (resp.Responses == null || resp.Responses.Count <= 0)
@@ -368,16 +291,15 @@ public static class DynamoDBServiceTests
 
             results.Add(await runner.RunTestAsync("dynamodb", "BatchExecuteStatement", async () =>
             {
-                await dynamoClient.BatchExecuteStatementAsync(new BatchExecuteStatementRequest
+                var resp = await dynamoClient.BatchExecuteStatementAsync(new BatchExecuteStatementRequest
                 {
                     Statements = new List<BatchStatementRequest>
                     {
-                        new BatchStatementRequest
-                        {
-                            Statement = $"UPDATE \"{tableName}\" SET \"name\" = 'batch updated' WHERE id = 'batch1'"
-                        }
+                        new() { Statement = $"UPDATE \"{tableName}\" SET \"name\" = 'batch updated' WHERE id = 'batch1'" }
                     }
                 });
+                if (resp.Responses == null)
+                    throw new Exception("BatchExecuteStatement Responses is null");
             }));
 
             results.Add(await runner.RunTestAsync("dynamodb", "ExecuteTransaction", async () =>
@@ -386,10 +308,7 @@ public static class DynamoDBServiceTests
                 {
                     TransactStatements = new List<ParameterizedStatement>
                     {
-                        new ParameterizedStatement
-                        {
-                            Statement = $"SELECT * FROM \"{tableName}\" WHERE id = 'test1'"
-                        }
+                        new() { Statement = $"SELECT * FROM \"{tableName}\" WHERE id = 'test1'" }
                     }
                 });
                 if (resp.Responses == null || resp.Responses.Count <= 0)
@@ -398,10 +317,7 @@ public static class DynamoDBServiceTests
 
             results.Add(await runner.RunTestAsync("dynamodb", "UpdateTable", async () =>
             {
-                var resp = await dynamoClient.UpdateTableAsync(new UpdateTableRequest
-                {
-                    TableName = tableName
-                });
+                var resp = await dynamoClient.UpdateTableAsync(new UpdateTableRequest { TableName = tableName });
                 if (resp.TableDescription == null)
                     throw new Exception("TableDescription is null");
             }));
@@ -411,483 +327,75 @@ public static class DynamoDBServiceTests
                 await dynamoClient.DeleteItemAsync(new DeleteItemRequest
                 {
                     TableName = tableName,
-                    Key = new Dictionary<string, AttributeValue>
-                    {
-                        { "id", new AttributeValue { S = "test1" } }
-                    }
+                    Key = new Dictionary<string, AttributeValue> { { "id", new AttributeValue { S = "test1" } } }
                 });
             }));
 
             results.Add(await runner.RunTestAsync("dynamodb", "DeleteTable", async () =>
             {
-                await dynamoClient.DeleteTableAsync(new DeleteTableRequest
-                {
-                    TableName = tableName
-                });
+                await dynamoClient.DeleteTableAsync(new DeleteTableRequest { TableName = tableName });
             }));
         }
         finally
         {
-            try
+            await TestHelpers.SafeCleanupAsync(async () =>
             {
                 await dynamoClient.DeleteTableAsync(new DeleteTableRequest { TableName = tableName });
-            }
-            catch { }
+            });
         }
 
-        // Error and edge case tests
-        results.Add(await runner.RunTestAsync("dynamodb", "GetItem_NonExistentTable", async () =>
+        // Setup composite key table for tests that need it
+        var compTableName = TestRunner.MakeUniqueName("CSCompTable");
+        results.Add(await runner.RunTestAsync("dynamodb", "CreateTable_CompositeKey", async () =>
         {
-            try
+            var resp = await dynamoClient.CreateTableAsync(new CreateTableRequest
             {
-                await dynamoClient.GetItemAsync(new GetItemRequest
+                TableName = compTableName,
+                AttributeDefinitions = new List<AttributeDefinition>
                 {
-                    TableName = "NonExistentTable_xyz",
-                    Key = new Dictionary<string, AttributeValue>
-                    {
-                        { "id", new AttributeValue { S = "test1" } }
-                    }
-                });
-                throw new Exception("Expected ResourceNotFoundException");
-            }
-            catch (ResourceNotFoundException)
-            {
-            }
+                    new() { AttributeName = "pk", AttributeType = "S" },
+                    new() { AttributeName = "sk", AttributeType = "S" }
+                },
+                KeySchema = new List<KeySchemaElement>
+                {
+                    new() { AttributeName = "pk", KeyType = "HASH" },
+                    new() { AttributeName = "sk", KeyType = "RANGE" }
+                },
+                BillingMode = "PAY_PER_REQUEST"
+            });
+            if (resp.TableDescription == null)
+                throw new Exception("TableDescription is nil");
+            if (resp.TableDescription.KeySchema == null || resp.TableDescription.KeySchema.Count != 2)
+                throw new Exception("expected 2 key schema elements");
         }));
 
-        results.Add(await runner.RunTestAsync("dynamodb", "PutItem_NonExistentTable", async () =>
+        var compItems = new List<Dictionary<string, AttributeValue>>
         {
-            try
-            {
-                await dynamoClient.PutItemAsync(new PutItemRequest
-                {
-                    TableName = "NonExistentTable_xyz",
-                    Item = new Dictionary<string, AttributeValue>
-                    {
-                        { "id", new AttributeValue { S = "test1" } },
-                        { "name", new AttributeValue { S = "Test" } }
-                    }
-                });
-                throw new Exception("Expected ResourceNotFoundException");
-            }
-            catch (ResourceNotFoundException)
-            {
-            }
-        }));
-
-        results.Add(await runner.RunTestAsync("dynamodb", "Query_NonExistentTable", async () =>
+            new() { { "pk", new AttributeValue { S = "user1" } }, { "sk", new AttributeValue { S = "meta" } }, { "name", new AttributeValue { S = "Alice" } }, { "age", new AttributeValue { N = "30" } }, { "active", new AttributeValue { BOOL = true } } },
+            new() { { "pk", new AttributeValue { S = "user1" } }, { "sk", new AttributeValue { S = "order1" } }, { "amount", new AttributeValue { N = "100" } }, { "status", new AttributeValue { S = "shipped" } } },
+            new() { { "pk", new AttributeValue { S = "user1" } }, { "sk", new AttributeValue { S = "order2" } }, { "amount", new AttributeValue { N = "200" } }, { "status", new AttributeValue { S = "pending" } } },
+            new() { { "pk", new AttributeValue { S = "user1" } }, { "sk", new AttributeValue { S = "order3" } }, { "amount", new AttributeValue { N = "50" } }, { "status", new AttributeValue { S = "delivered" } } },
+            new() { { "pk", new AttributeValue { S = "user2" } }, { "sk", new AttributeValue { S = "meta" } }, { "name", new AttributeValue { S = "Bob" } }, { "age", new AttributeValue { N = "25" } }, { "active", new AttributeValue { BOOL = false } } },
+            new() { { "pk", new AttributeValue { S = "user2" } }, { "sk", new AttributeValue { S = "order1" } }, { "amount", new AttributeValue { N = "300" } }, { "status", new AttributeValue { S = "shipped" } } }
+        };
+        foreach (var item in compItems)
         {
-            try
+            await TestHelpers.SafeCleanupAsync(async () =>
             {
-                await dynamoClient.QueryAsync(new QueryRequest
-                {
-                    TableName = "NonExistentTable_xyz",
-                    KeyConditionExpression = "id = :id",
-                    ExpressionAttributeValues = new Dictionary<string, AttributeValue>
-                    {
-                        { ":id", new AttributeValue { S = "test1" } }
-                    }
-                });
-                throw new Exception("Expected ResourceNotFoundException");
-            }
-            catch (ResourceNotFoundException)
-            {
-            }
-        }));
+                await dynamoClient.PutItemAsync(new PutItemRequest { TableName = compTableName, Item = item });
+            });
+        }
 
-        results.Add(await runner.RunTestAsync("dynamodb", "Scan_NonExistentTable", async () =>
+        await RunErrorTests(runner, dynamoClient, results);
+        await RunItemTests(runner, dynamoClient, compTableName, results);
+        await RunConditionTests(runner, dynamoClient, results);
+        await RunQueryTests(runner, dynamoClient, compTableName, results);
+
+        // Clean up composite key table
+        await TestHelpers.SafeCleanupAsync(async () =>
         {
-            try
-            {
-                await dynamoClient.ScanAsync(new ScanRequest
-                {
-                    TableName = "NonExistentTable_xyz"
-                });
-                throw new Exception("Expected ResourceNotFoundException");
-            }
-            catch (ResourceNotFoundException)
-            {
-            }
-        }));
-
-        results.Add(await runner.RunTestAsync("dynamodb", "DescribeTable_NonExistentTable", async () =>
-        {
-            try
-            {
-                await dynamoClient.DescribeTableAsync(new DescribeTableRequest
-                {
-                    TableName = "NonExistentTable_xyz"
-                });
-                throw new Exception("Expected ResourceNotFoundException");
-            }
-            catch (ResourceNotFoundException)
-            {
-            }
-        }));
-
-        results.Add(await runner.RunTestAsync("dynamodb", "DeleteTable_NonExistentTable", async () =>
-        {
-            try
-            {
-                await dynamoClient.DeleteTableAsync(new DeleteTableRequest
-                {
-                    TableName = "NonExistentTable_xyz"
-                });
-                throw new Exception("Expected ResourceNotFoundException");
-            }
-            catch (ResourceNotFoundException)
-            {
-            }
-        }));
-
-        results.Add(await runner.RunTestAsync("dynamodb", "UpdateItem_ConditionalCheckFail", async () =>
-        {
-            var tempTable = TestRunner.MakeUniqueName("CSCondFail");
-            try
-            {
-                await dynamoClient.CreateTableAsync(new CreateTableRequest
-                {
-                    TableName = tempTable,
-                    AttributeDefinitions = new List<AttributeDefinition>
-                    {
-                        new AttributeDefinition { AttributeName = "id", AttributeType = "S" }
-                    },
-                    KeySchema = new List<KeySchemaElement>
-                    {
-                        new KeySchemaElement { AttributeName = "id", KeyType = "HASH" }
-                    },
-                    BillingMode = "PAY_PER_REQUEST"
-                });
-
-                await dynamoClient.PutItemAsync(new PutItemRequest
-                {
-                    TableName = tempTable,
-                    Item = new Dictionary<string, AttributeValue>
-                    {
-                        { "id", new AttributeValue { S = "test1" } },
-                        { "status", new AttributeValue { S = "active" } }
-                    }
-                });
-
-                try
-                {
-                    await dynamoClient.UpdateItemAsync(new UpdateItemRequest
-                    {
-                        TableName = tempTable,
-                        Key = new Dictionary<string, AttributeValue>
-                        {
-                            { "id", new AttributeValue { S = "test1" } }
-                        },
-                        UpdateExpression = "SET #s = :status",
-                        ConditionExpression = "#s = :expected",
-                        ExpressionAttributeNames = new Dictionary<string, string>
-                        {
-                            { "#s", "status" }
-                        },
-                        ExpressionAttributeValues = new Dictionary<string, AttributeValue>
-                        {
-                            { ":status", new AttributeValue { S = "inactive" } },
-                            { ":expected", new AttributeValue { S = "deleted" } }
-                        }
-                    });
-                    throw new Exception("Expected ConditionalCheckFailedException");
-                }
-                catch (ConditionalCheckFailedException)
-                {
-                }
-            }
-            finally
-            {
-                try { await dynamoClient.DeleteTableAsync(new DeleteTableRequest { TableName = tempTable }); } catch { }
-            }
-        }));
-
-        results.Add(await runner.RunTestAsync("dynamodb", "DeleteItem_ConditionalCheckFail", async () =>
-        {
-            var tempTable = TestRunner.MakeUniqueName("CSDelCondFail");
-            try
-            {
-                await dynamoClient.CreateTableAsync(new CreateTableRequest
-                {
-                    TableName = tempTable,
-                    AttributeDefinitions = new List<AttributeDefinition>
-                    {
-                        new AttributeDefinition { AttributeName = "id", AttributeType = "S" }
-                    },
-                    KeySchema = new List<KeySchemaElement>
-                    {
-                        new KeySchemaElement { AttributeName = "id", KeyType = "HASH" }
-                    },
-                    BillingMode = "PAY_PER_REQUEST"
-                });
-
-                await dynamoClient.PutItemAsync(new PutItemRequest
-                {
-                    TableName = tempTable,
-                    Item = new Dictionary<string, AttributeValue>
-                    {
-                        { "id", new AttributeValue { S = "test1" } },
-                        { "status", new AttributeValue { S = "active" } }
-                    }
-                });
-
-                try
-                {
-                    await dynamoClient.DeleteItemAsync(new DeleteItemRequest
-                    {
-                        TableName = tempTable,
-                        Key = new Dictionary<string, AttributeValue>
-                        {
-                            { "id", new AttributeValue { S = "test1" } }
-                        },
-                        ConditionExpression = "#s = :expected",
-                        ExpressionAttributeNames = new Dictionary<string, string>
-                        {
-                            { "#s", "status" }
-                        },
-                        ExpressionAttributeValues = new Dictionary<string, AttributeValue>
-                        {
-                            { ":expected", new AttributeValue { S = "deleted" } }
-                        }
-                    });
-                    throw new Exception("Expected ConditionalCheckFailedException");
-                }
-                catch (ConditionalCheckFailedException)
-                {
-                }
-            }
-            finally
-            {
-                try { await dynamoClient.DeleteTableAsync(new DeleteTableRequest { TableName = tempTable }); } catch { }
-            }
-        }));
-
-        results.Add(await runner.RunTestAsync("dynamodb", "BatchGetItem_NonExistentTable", async () =>
-        {
-            try
-            {
-                await dynamoClient.BatchGetItemAsync(new BatchGetItemRequest
-                {
-                    RequestItems = new Dictionary<string, KeysAndAttributes>
-                    {
-                        {
-                            "NonExistentTable_xyz", new KeysAndAttributes
-                            {
-                                Keys = new List<Dictionary<string, AttributeValue>>
-                                {
-                                    new Dictionary<string, AttributeValue>
-                                    {
-                                        { "id", new AttributeValue { S = "test1" } }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-                throw new Exception("Expected ResourceNotFoundException");
-            }
-            catch (ResourceNotFoundException)
-            {
-            }
-        }));
-
-        results.Add(await runner.RunTestAsync("dynamodb", "CreateTable_DuplicateName", async () =>
-        {
-            var dupTable = TestRunner.MakeUniqueName("CSDup");
-            try
-            {
-                await dynamoClient.CreateTableAsync(new CreateTableRequest
-                {
-                    TableName = dupTable,
-                    AttributeDefinitions = new List<AttributeDefinition>
-                    {
-                        new AttributeDefinition { AttributeName = "id", AttributeType = "S" }
-                    },
-                    KeySchema = new List<KeySchemaElement>
-                    {
-                        new KeySchemaElement { AttributeName = "id", KeyType = "HASH" }
-                    },
-                    BillingMode = "PAY_PER_REQUEST"
-                });
-
-                try
-                {
-                    await dynamoClient.CreateTableAsync(new CreateTableRequest
-                    {
-                        TableName = dupTable,
-                        AttributeDefinitions = new List<AttributeDefinition>
-                        {
-                            new AttributeDefinition { AttributeName = "id", AttributeType = "S" }
-                        },
-                        KeySchema = new List<KeySchemaElement>
-                        {
-                            new KeySchemaElement { AttributeName = "id", KeyType = "HASH" }
-                        },
-                        BillingMode = "PAY_PER_REQUEST"
-                    });
-                    throw new Exception("Expected ResourceInUseException");
-                }
-                catch (ResourceInUseException)
-                {
-                }
-            }
-            finally
-            {
-                try { await dynamoClient.DeleteTableAsync(new DeleteTableRequest { TableName = dupTable }); } catch { }
-            }
-        }));
-
-        results.Add(await runner.RunTestAsync("dynamodb", "Query_ReturnConsumedCapacity", async () =>
-        {
-            var tempTable = TestRunner.MakeUniqueName("CSQCap");
-            try
-            {
-                await dynamoClient.CreateTableAsync(new CreateTableRequest
-                {
-                    TableName = tempTable,
-                    AttributeDefinitions = new List<AttributeDefinition>
-                    {
-                        new AttributeDefinition { AttributeName = "id", AttributeType = "S" }
-                    },
-                    KeySchema = new List<KeySchemaElement>
-                    {
-                        new KeySchemaElement { AttributeName = "id", KeyType = "HASH" }
-                    },
-                    BillingMode = "PAY_PER_REQUEST"
-                });
-
-                await dynamoClient.PutItemAsync(new PutItemRequest
-                {
-                    TableName = tempTable,
-                    Item = new Dictionary<string, AttributeValue>
-                    {
-                        { "id", new AttributeValue { S = "test1" } },
-                        { "name", new AttributeValue { S = "Test Item" } }
-                    }
-                });
-
-                var resp = await dynamoClient.QueryAsync(new QueryRequest
-                {
-                    TableName = tempTable,
-                    KeyConditionExpression = "id = :id",
-                    ExpressionAttributeValues = new Dictionary<string, AttributeValue>
-                    {
-                        { ":id", new AttributeValue { S = "test1" } }
-                    },
-                    ReturnConsumedCapacity = "TOTAL"
-                });
-                if (resp.ConsumedCapacity == null)
-                    throw new Exception("ConsumedCapacity is null");
-            }
-            finally
-            {
-                try { await dynamoClient.DeleteTableAsync(new DeleteTableRequest { TableName = tempTable }); } catch { }
-            }
-        }));
-
-        results.Add(await runner.RunTestAsync("dynamodb", "PutItem_ReturnValues", async () =>
-        {
-            var tempTable = TestRunner.MakeUniqueName("CSPutRV");
-            try
-            {
-                await dynamoClient.CreateTableAsync(new CreateTableRequest
-                {
-                    TableName = tempTable,
-                    AttributeDefinitions = new List<AttributeDefinition>
-                    {
-                        new AttributeDefinition { AttributeName = "id", AttributeType = "S" }
-                    },
-                    KeySchema = new List<KeySchemaElement>
-                    {
-                        new KeySchemaElement { AttributeName = "id", KeyType = "HASH" }
-                    },
-                    BillingMode = "PAY_PER_REQUEST"
-                });
-
-                await dynamoClient.PutItemAsync(new PutItemRequest
-                {
-                    TableName = tempTable,
-                    Item = new Dictionary<string, AttributeValue>
-                    {
-                        { "id", new AttributeValue { S = "test1" } },
-                        { "name", new AttributeValue { S = "Before" } }
-                    }
-                });
-
-                var resp = await dynamoClient.PutItemAsync(new PutItemRequest
-                {
-                    TableName = tempTable,
-                    Item = new Dictionary<string, AttributeValue>
-                    {
-                        { "id", new AttributeValue { S = "test1" } },
-                        { "name", new AttributeValue { S = "After" } }
-                    },
-                    ReturnValues = "ALL_OLD"
-                });
-                if (resp.Attributes == null || !resp.Attributes.ContainsKey("name") || resp.Attributes["name"].S != "Before")
-                    throw new Exception("PutItem ALL_OLD did not return old attributes");
-            }
-            finally
-            {
-                try { await dynamoClient.DeleteTableAsync(new DeleteTableRequest { TableName = tempTable }); } catch { }
-            }
-        }));
-
-        results.Add(await runner.RunTestAsync("dynamodb", "UpdateItem_ReturnUpdatedAttributes", async () =>
-        {
-            var tempTable = TestRunner.MakeUniqueName("CSUpdRV");
-            try
-            {
-                await dynamoClient.CreateTableAsync(new CreateTableRequest
-                {
-                    TableName = tempTable,
-                    AttributeDefinitions = new List<AttributeDefinition>
-                    {
-                        new AttributeDefinition { AttributeName = "id", AttributeType = "S" }
-                    },
-                    KeySchema = new List<KeySchemaElement>
-                    {
-                        new KeySchemaElement { AttributeName = "id", KeyType = "HASH" }
-                    },
-                    BillingMode = "PAY_PER_REQUEST"
-                });
-
-                await dynamoClient.PutItemAsync(new PutItemRequest
-                {
-                    TableName = tempTable,
-                    Item = new Dictionary<string, AttributeValue>
-                    {
-                        { "id", new AttributeValue { S = "test1" } },
-                        { "name", new AttributeValue { S = "Before" } }
-                    }
-                });
-
-                var resp = await dynamoClient.UpdateItemAsync(new UpdateItemRequest
-                {
-                    TableName = tempTable,
-                    Key = new Dictionary<string, AttributeValue>
-                    {
-                        { "id", new AttributeValue { S = "test1" } }
-                    },
-                    UpdateExpression = "SET #n = :name",
-                    ExpressionAttributeNames = new Dictionary<string, string>
-                    {
-                        { "#n", "name" }
-                    },
-                    ExpressionAttributeValues = new Dictionary<string, AttributeValue>
-                    {
-                        { ":name", new AttributeValue { S = "After" } }
-                    },
-                    ReturnValues = "ALL_NEW"
-                });
-                if (resp.Attributes == null || !resp.Attributes.ContainsKey("name") || resp.Attributes["name"].S != "After")
-                    throw new Exception("UpdateItem ALL_NEW did not return updated attributes");
-            }
-            finally
-            {
-                try { await dynamoClient.DeleteTableAsync(new DeleteTableRequest { TableName = tempTable }); } catch { }
-            }
-        }));
+            await dynamoClient.DeleteTableAsync(new DeleteTableRequest { TableName = compTableName });
+        });
 
         return results;
     }
