@@ -10,7 +10,7 @@ Conformance tests for the [VorpalStacks](https://github.com/tagumasa/vorpalstack
 |----------|-----|-------|--------|
 | Go | aws-sdk-go-v2 | 2003 | Baseline (source of truth) |
 | Python | boto3 | 631 | |
-| TypeScript | @aws-sdk/client-* | 629 | |
+| TypeScript | @aws-sdk/client-* | 2028 | |
 | C# | AWSSDK.* v4 | 2019 | |
 
 ### IaC Tests (`iactests/`)
@@ -46,7 +46,8 @@ cd sdktests/python
 python3 -m venv venv
 source venv/bin/activate
 pip install -e .
-python3 -m conformance
+ENDPOINT_URL=http://localhost:8080 AWS_DEFAULT_REGION=us-east-1 AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test \
+  python3 -m pytest src/conformance/ -v
 ```
 
 ### TypeScript
@@ -94,9 +95,8 @@ vorpalstacks-conformance-tests/
 │   │   ├── pyproject.toml
 │   │   ├── venv/              # Python virtual environment (gitignored)
 │   │   └── src/conformance/
-│   │       ├── __main__.py    # Entry point
-│   │       ├── runner.py      # Server endpoint & AWS credentials
-│   │       └── services/      # 26 service test modules
+│   │       ├── __main__.py    # Entry point (pytest wrapper)
+│   │       └── services/      # 29 service test modules (pytest)
 │   ├── typescript/
 │   │   ├── package.json
 │   │   ├── tsconfig.json
@@ -105,13 +105,13 @@ vorpalstacks-conformance-tests/
 │   │   └── src/
 │   │       ├── index.ts       # Entry point
 │   │       ├── runner.ts      # Test runner
-│   │       └── services/      # 26 service test modules
+│   │       └── services/      # 33 service test modules
 │   └── cs/
 │       └── src/
 │           ├── VorpalStacks.SDK.Tests.csproj
 │           ├── Program.cs     # Entry point
 │           ├── TestRunner.cs  # Server endpoint & AWS credentials
-│           └── Services/      # 26 service test modules
+│           └── Services/      # 40 service test modules
 ├── iactests/
 │   ├── terraform/
 │   │   └── tests/             # 28 service modules (hashicorp/aws)
@@ -123,7 +123,7 @@ vorpalstacks-conformance-tests/
 
 ## Services Tested
 
-ACM, API Gateway, Athena, CloudFront, CloudTrail, CloudWatch, CloudWatch Logs, Cognito Identity, Cognito Identity Provider, DynamoDB, EventBridge, IAM, Kinesis, KMS, Lambda, Route 53, S3, Scheduler, Secrets Manager, SESv2, SNS, SQS, SSM, Step Functions, STS, Timestream (Write), WAF, WAFv2
+ACM, API Gateway, AppSync, AppSync WebSocket, Athena, CloudFront, CloudTrail, CloudWatch, CloudWatch Logs, Cognito Identity, Cognito Identity Provider, DynamoDB, EventBridge, IAM, Kinesis, KMS, Lambda, Neptune, Neptune Data, Neptune Graph, Route 53, S3, Scheduler, Secrets Manager, SESv2, SNS, SQS, SSM, Step Functions, STS, Timestream (Write), WAF, WAFv2
 
 ## Conventions
 
